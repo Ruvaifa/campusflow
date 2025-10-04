@@ -32,8 +32,7 @@ const DashboardLayout = () => {
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Users, label: 'Entities', path: '/dashboard/entities' },
-    { icon: Shield, label: 'Security', path: '/dashboard/security' },
-    { icon: Bell, label: 'Alerts', path: '/dashboard/alerts' },
+    { icon: Shield, label: 'Security Monitoring', path: '/dashboard/security-monitoring' },
     { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
   ];
 
