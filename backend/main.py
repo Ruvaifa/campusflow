@@ -256,6 +256,201 @@ async def get_alerts(
     
     return alerts
 
+@app.get("/api/security/entity-history")
+async def get_entity_history(
+    entity_id: Optional[str] = None,
+    asset_type: str = Query("all", regex="^(all|swipe|wifi|lab|library|cctv)$"),
+    time_range: str = Query("today", regex="^(today|24h|7d|30d|custom)$"),
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None
+):
+    """
+    Get complete history for an entity across all systems
+    Supports filtering by asset type and time range
+    """
+    from datetime import datetime, timedelta
+    
+    # Calculate time range
+    now = datetime.now()
+    if time_range == "today":
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif time_range == "24h":
+        start = now - timedelta(hours=24)
+    elif time_range == "7d":
+        start = now - timedelta(days=7)
+    elif time_range == "30d":
+        start = now - timedelta(days=30)
+    elif time_range == "custom" and start_time:
+        start = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+    else:
+        start = now - timedelta(hours=24)
+    
+    end = datetime.fromisoformat(end_time.replace('Z', '+00:00')) if end_time else now
+    
+    history = {
+        "entity_id": entity_id,
+        "time_range": {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "type": time_range
+        },
+        "activities": []
+    }
+    
+    # Fetch data based on asset type
+    if asset_type in ["all", "swipe"]:
+        swipes = db.get_recent_swipes(limit=500, entity_id=entity_id)
+        for swipe in swipes:
+            swipe_time = datetime.fromisoformat(swipe['timestamp'].replace('Z', '+00:00'))
+            if start <= swipe_time <= end:
+                history["activities"].append({
+                    "type": "swipe",
+                    "timestamp": swipe['timestamp'],
+                    "location": swipe.get('location', 'Unknown'),
+                    "details": {
+                        "card_id": swipe.get('card_id'),
+                        "access_granted": swipe.get('access_granted', True)
+                    }
+                })
+    
+    if asset_type in ["all", "wifi"]:
+        wifi_logs = db.get_recent_wifi_logs(limit=500, entity_id=entity_id)
+        for log in wifi_logs:
+            log_time = datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00'))
+            if start <= log_time <= end:
+                history["activities"].append({
+                    "type": "wifi",
+                    "timestamp": log['timestamp'],
+                    "location": log.get('location', 'Unknown'),
+                    "details": {
+                        "device_hash": log.get('device_hash'),
+                        "ssid": log.get('ssid')
+                    }
+                })
+    
+    if asset_type in ["all", "lab"]:
+        lab_bookings = db.get_lab_bookings(entity_id=entity_id)
+        for booking in lab_bookings:
+            booking_time = datetime.fromisoformat(booking['booking_time'].replace('Z', '+00:00'))
+            if start <= booking_time <= end:
+                history["activities"].append({
+                    "type": "lab_booking",
+                    "timestamp": booking['booking_time'],
+                    "location": booking.get('lab_name', 'Unknown Lab'),
+                    "details": {
+                        "duration": booking.get('duration_hours'),
+                        "purpose": booking.get('purpose')
+                    }
+                })
+    
+    if asset_type in ["all", "library"]:
+        checkouts = db.get_library_checkouts(entity_id=entity_id)
+        for checkout in checkouts:
+            checkout_time = datetime.fromisoformat(checkout['checkout_time'].replace('Z', '+00:00'))
+            if start <= checkout_time <= end:
+                history["activities"].append({
+                    "type": "library",
+                    "timestamp": checkout['checkout_time'],
+                    "location": "Library",
+                    "details": {
+                        "book_title": checkout.get('book_title'),
+                        "due_date": checkout.get('due_date')
+                    }
+                })
+    
+    # Sort activities by timestamp
+    history["activities"].sort(key=lambda x: x["timestamp"], reverse=True)
+    history["total_activities"] = len(history["activities"])
+    
+    return history
+
+@app.get("/api/security/inactive-entities")
+async def get_inactive_entities(
+    hours: int = Query(12, ge=1, le=168),
+    limit: int = Query(50, ge=1, le=500)
+):
+    """
+    Detect entities that have not been observed in any logs for the specified hours
+    Generates alerts for entities missing from all systems
+    """
+    from datetime import datetime, timedelta
+    
+    cutoff_time = datetime.now() - timedelta(hours=hours)
+    
+    # Get all profiles
+    all_profiles = db.get_all_profiles(limit=1000)
+    
+    # Get recent activities
+    recent_swipes = db.get_recent_swipes(limit=1000)
+    recent_wifi = db.get_recent_wifi_logs(limit=1000)
+    recent_labs = db.get_lab_bookings()
+    recent_library = db.get_library_checkouts()
+    
+    # Track entities with recent activity
+    active_entities = set()
+    
+    for swipe in recent_swipes:
+        swipe_time = datetime.fromisoformat(swipe['timestamp'].replace('Z', '+00:00'))
+        if swipe_time >= cutoff_time:
+            active_entities.add(swipe.get('identity'))
+    
+    for log in recent_wifi:
+        log_time = datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00'))
+        if log_time >= cutoff_time:
+            active_entities.add(log.get('identity'))
+    
+    for booking in recent_labs:
+        booking_time = datetime.fromisoformat(booking['booking_time'].replace('Z', '+00:00'))
+        if booking_time >= cutoff_time:
+            active_entities.add(booking.get('identity'))
+    
+    for checkout in recent_library:
+        checkout_time = datetime.fromisoformat(checkout['checkout_time'].replace('Z', '+00:00'))
+        if checkout_time >= cutoff_time:
+            active_entities.add(checkout.get('identity'))
+    
+    # Find inactive entities
+    inactive_entities = []
+    for profile in all_profiles[:limit]:
+        entity_id = profile.get('entity_id')
+        if entity_id not in active_entities:
+            # Get last known activity
+            last_activity = None
+            last_location = "Unknown"
+            
+            # Check all sources for last activity
+            entity_swipes = [s for s in recent_swipes if s.get('identity') == entity_id]
+            entity_wifi = [w for w in recent_wifi if w.get('identity') == entity_id]
+            
+            all_activities = []
+            if entity_swipes:
+                all_activities.extend([(s['timestamp'], s.get('location', 'Unknown')) for s in entity_swipes])
+            if entity_wifi:
+                all_activities.extend([(w['timestamp'], w.get('location', 'Unknown')) for w in entity_wifi])
+            
+            if all_activities:
+                all_activities.sort(reverse=True)
+                last_activity = all_activities[0][0]
+                last_location = all_activities[0][1]
+            
+            inactive_entities.append({
+                "entity_id": entity_id,
+                "name": profile.get('name', 'Unknown'),
+                "email": profile.get('email'),
+                "department": profile.get('department'),
+                "last_seen": last_activity,
+                "last_location": last_location,
+                "hours_inactive": hours if not last_activity else int((datetime.now() - datetime.fromisoformat(last_activity.replace('Z', '+00:00'))).total_seconds() / 3600),
+                "alert_severity": "high" if hours >= 24 else "medium"
+            })
+    
+    return {
+        "cutoff_time": cutoff_time.isoformat(),
+        "hours_threshold": hours,
+        "total_inactive": len(inactive_entities),
+        "inactive_entities": inactive_entities[:limit]
+    }
+
 # ============================================
 # MAIN
 # ============================================
