@@ -25,12 +25,17 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { useSecurityStats, useAlerts } from '@/hooks/useAPI';
 
 const Security = () => {
+  // Fetch real security data from API
+  const { data: securityStats, isLoading: statsLoading } = useSecurityStats();
+  const { data: alerts, isLoading: alertsLoading } = useAlerts();
+
   const stats = [
     { 
       title: 'Active Threats', 
-      value: '3', 
+      value: securityStats?.active_threats?.toString() || '0', 
       change: '-2 from yesterday', 
       icon: AlertTriangle,
       color: 'text-destructive',
@@ -38,7 +43,7 @@ const Security = () => {
     },
     { 
       title: 'Resolved Today', 
-      value: '24', 
+      value: securityStats?.resolved_today?.toString() || '0', 
       change: '+8 from yesterday', 
       icon: CheckCircle,
       color: 'text-success',
@@ -46,7 +51,7 @@ const Security = () => {
     },
     { 
       title: 'Monitored Zones', 
-      value: '12', 
+      value: securityStats?.monitored_zones?.toString() || '0', 
       change: 'All active', 
       icon: Eye,
       color: 'text-chart-2',
@@ -54,7 +59,7 @@ const Security = () => {
     },
     { 
       title: 'Access Violations', 
-      value: '5', 
+      value: securityStats?.access_violations?.toString() || '0', 
       change: '+2 this hour', 
       icon: Lock,
       color: 'text-warning',
@@ -78,31 +83,18 @@ const Security = () => {
     { name: 'Low', value: 24, color: 'hsl(var(--chart-4))' },
   ];
 
-  const activeThreats = [
-    { 
-      id: 1, 
-      type: 'Unauthorized Access', 
-      location: 'Building A - Lab 3', 
-      severity: 'critical',
-      time: '2m ago',
-      entity: 'Unknown Device #4A2B'
-    },
-    { 
-      id: 2, 
-      type: 'Simultaneous Login', 
-      location: 'Multiple Locations', 
-      severity: 'high',
-      time: '8m ago',
-      entity: 'Card #1234'
-    },
-    { 
-      id: 3, 
-      type: 'Unusual Pattern', 
-      location: 'North Gate', 
-      severity: 'medium',
-      time: '15m ago',
-      entity: 'Alex Johnson'
-    },
+  // Use real alerts data from API
+  const activeThreats = alerts?.filter(alert => alert.status === 'active').map((alert, index) => ({
+    id: index + 1,
+    type: alert.alert_type,
+    location: alert.location || 'Unknown Location',
+    severity: alert.severity,
+    time: new Date(alert.timestamp).toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit' 
+    }),
+    entity: alert.entity_id || 'Unknown Entity'
+  })) || [
   ];
 
   const recentActivity = [
@@ -111,6 +103,29 @@ const Security = () => {
     { id: 3, action: 'Zone Breach', location: 'Restricted Area B', user: 'Staff #234', time: '18m ago', status: 'investigating' },
     { id: 4, action: 'Access Granted', location: 'Main Building', user: 'Sarah Williams', time: '22m ago', status: 'normal' },
   ];
+
+  // Show loading state
+  if (statsLoading || alertsLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Security</h1>
+          <p className="text-muted-foreground mt-1">
+            Loading security data...
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-20 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">

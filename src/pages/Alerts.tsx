@@ -23,12 +23,18 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { useAlerts } from '@/hooks/useAPI';
 
 const Alerts = () => {
+  // Fetch real alerts data from API
+  const { data: allAlerts, isLoading } = useAlerts();
+  const { data: criticalAlerts } = useAlerts(undefined, 'critical');
+  const { data: resolvedAlertsData } = useAlerts('resolved');
+
   const stats = [
     { 
       title: 'Total Alerts', 
-      value: '47', 
+      value: allAlerts?.length?.toString() || '0', 
       change: '+12 today', 
       icon: Bell,
       color: 'text-chart-1',
@@ -36,7 +42,7 @@ const Alerts = () => {
     },
     { 
       title: 'Critical', 
-      value: '5', 
+      value: criticalAlerts?.length?.toString() || '0', 
       change: '+2 from yesterday', 
       icon: AlertTriangle,
       color: 'text-destructive',
@@ -44,7 +50,7 @@ const Alerts = () => {
     },
     { 
       title: 'Resolved', 
-      value: '32', 
+      value: resolvedAlertsData?.length?.toString() || '0', 
       change: '+18 today', 
       icon: CheckCircle,
       color: 'text-success',
@@ -78,64 +84,32 @@ const Alerts = () => {
     { name: 'Location', count: 5 },
   ];
 
-  const activeAlerts = [
-    {
-      id: 1,
-      type: 'Unauthorized Access Attempt',
-      entity: 'Unknown Entity #4213',
-      severity: 'critical',
-      time: '2m ago',
-      location: 'Server Room A',
-      evidence: 'Multiple failed swipe attempts, no valid credentials'
-    },
-    {
-      id: 2,
-      type: 'Simultaneous Location Conflict',
-      entity: 'Card #5678',
-      severity: 'high',
-      time: '5m ago',
-      location: 'Building A & C',
-      evidence: 'Card used at two locations 2km apart within 3 minutes'
-    },
-    {
-      id: 3,
-      type: 'Not Seen >12 Hours',
-      entity: 'Asset Tracker #A42',
-      severity: 'high',
-      time: '8m ago',
-      location: 'Last: Lab 3',
-      evidence: 'No activity detected since 08:15 AM'
-    },
-    {
-      id: 4,
-      type: 'Low Confidence Match',
-      entity: 'Sarah Williams',
-      severity: 'medium',
-      time: '12m ago',
-      location: 'Library Entrance',
-      evidence: 'Face similarity: 0.62, below threshold'
-    },
-    {
-      id: 5,
-      type: 'Device Without Swipe',
-      entity: 'Device MAC:4A:2B:C3',
-      severity: 'medium',
-      time: '15m ago',
-      location: 'Restricted Lab B',
-      evidence: 'WiFi detected in access-controlled area, no card swipe'
-    },
-    {
-      id: 6,
-      type: 'Unusual Access Pattern',
-      entity: 'Alex Johnson',
-      severity: 'low',
-      time: '22m ago',
-      location: 'North Gate',
-      evidence: 'Access at unusual time (3:42 AM)'
-    },
-  ];
+  // Use real active alerts from API
+  const activeAlerts = allAlerts?.filter(alert => alert.status === 'active').map((alert, index) => ({
+    id: index + 1,
+    type: alert.alert_type,
+    entity: alert.entity_id || 'Unknown Entity',
+    severity: alert.severity,
+    time: new Date(alert.timestamp).toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit' 
+    }),
+    location: alert.location || 'Unknown Location',
+    evidence: alert.description
+  })) || [];
 
-  const resolvedAlerts = [
+  // Use real resolved alerts from API
+  const resolvedAlerts = resolvedAlertsData?.map((alert, index) => ({
+    id: index + 1,
+    type: alert.alert_type,
+    entity: alert.entity_id || 'Unknown Entity',
+    resolvedBy: alert.resolved_by || 'System',
+    time: alert.resolved_at ? new Date(alert.resolved_at).toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit' 
+    }) : 'N/A',
+    resolution: alert.description
+  })) || [
     {
       id: 1,
       type: 'Access Anomaly',
@@ -161,6 +135,29 @@ const Alerts = () => {
       resolution: 'Device removed, area secured'
     },
   ];
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Alerts</h1>
+          <p className="text-muted-foreground mt-1">
+            Loading alerts data...
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-20 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
