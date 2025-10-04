@@ -14,6 +14,34 @@ npm i
 npm run dev
 ```
 
+Backend Setup:
+### Step 1: Backend Setup
+
+1. **Install Python dependencies:**
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+2. **Create `creds.env` file:**
+```bash
+cd backend
+touch creds.env
+```
+
+3. **Add your Supabase credentials to `creds.env`:**
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-anon-key-here
+```
+
+4. **Start the backend server:**
+```bash
+python main.py
+```
+
+The API will run at `http://localhost:8000`
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
