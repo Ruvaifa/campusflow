@@ -93,3 +93,16 @@ class EntityResolutionResult(BaseModel):
     matched_sources: list[str]
     profile: Optional[Profile] = None
     recent_activities: Optional[Dict[str, Any]] = None
+
+# Timeline Models
+class TimelineEntry(BaseModel):
+    entity_id: str
+    detection_types: list[str]
+    locations: list[str]
+    timestamps: list[datetime]
+
+class TimelineActivity(BaseModel):
+    timestamp: datetime
+    location: str
+    detection_type: str
+    description: str

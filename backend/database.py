@@ -738,4 +738,130 @@ class DatabaseService:
             "total_activities": len(recent_swipes.data),
             "resolution_accuracy": None  # TODO: Implement real calculation
         }
+    
+    @staticmethod
+    def get_entity_timeline(entity_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get timeline data for a specific entity from the timeline table
+        """
+        try:
+            response = supabase.table("timeline").select("*").eq("entity_id", entity_id).execute()
+            
+            if not response.data or len(response.data) == 0:
+                return None
+            
+            timeline_data = response.data[0]
+            
+            # Parse the arrays and create structured timeline
+            detection_types = timeline_data.get("detection_types", [])
+            locations = timeline_data.get("locations", [])
+            timestamps = timeline_data.get("timestamps", [])
+            
+            # Create timeline activities
+            activities = []
+            for i in range(len(timestamps)):
+                detection_type = detection_types[i] if i < len(detection_types) else "unknown"
+                location = locations[i] if i < len(locations) else "Unknown"
+                timestamp = timestamps[i]
+                
+                # Create human-readable description
+                description = DatabaseService._get_activity_description(detection_type, location)
+                
+                activities.append({
+                    "timestamp": timestamp,
+                    "location": location,
+                    "detection_type": detection_type,
+                    "description": description
+                })
+            
+            # Sort by timestamp descending (most recent first)
+            activities.sort(key=lambda x: x["timestamp"], reverse=True)
+            
+            # Get current location (most recent activity)
+            current_location = activities[0]["location"] if activities else "Unknown"
+            last_seen = activities[0]["timestamp"] if activities else None
+            
+            return {
+                "entity_id": entity_id,
+                "current_location": current_location,
+                "last_seen": last_seen,
+                "activities": activities
+            }
+            
+        except Exception as e:
+            print(f"Error getting entity timeline: {e}")
+            return None
+    
+    @staticmethod
+    def _get_activity_description(detection_type: str, location: str) -> str:
+        """
+        Generate human-readable description for activity
+        """
+        type_descriptions = {
+            "swipes": f"Card swipe at {location}",
+            "wifi_logs": f"WiFi connection at {location}",
+            "lab_bookings": f"Lab booking at {location}",
+            "library_checkouts": f"Library activity - {location}",
+            "cctv_frame": f"Detected on camera at {location}",
+            "notes": f"Note created at {location}"
+        }
+        return type_descriptions.get(detection_type, f"Activity at {location}")
+    
+    @staticmethod
+    def get_all_entities_with_timeline(limit: int = 100, offset: int = 0, search: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get all entities with their profile and timeline data
+        """
+        try:
+            # Get profiles
+            query = supabase.table("profiles").select("*")
+            
+            if search:
+                query = query.or_(f"name.ilike.%{search}%,entity_id.ilike.%{search}%,email.ilike.%{search}%")
+            
+            profiles_response = query.range(offset, offset + limit - 1).execute()
+            
+            # Get count
+            count_query = supabase.table("profiles").select("entity_id", count="exact")
+            if search:
+                count_query = count_query.or_(f"name.ilike.%{search}%,entity_id.ilike.%{search}%,email.ilike.%{search}%")
+            count_response = count_query.execute()
+            
+            entities = []
+            for profile in profiles_response.data:
+                entity_id = profile.get("entity_id")
+                
+                # Get timeline for this entity
+                timeline = DatabaseService.get_entity_timeline(entity_id)
+                
+                entity_data = {
+                    "entity_id": entity_id,
+                    "name": profile.get("name"),
+                    "role": profile.get("role"),
+                    "email": profile.get("email"),
+                    "department": profile.get("department"),
+                    "student_id": profile.get("student_id"),
+                    "current_location": timeline["current_location"] if timeline else "Unknown",
+                    "last_seen": timeline["last_seen"] if timeline else None,
+                    "activity_count": len(timeline["activities"]) if timeline else 0
+                }
+                
+                entities.append(entity_data)
+            
+            return {
+                "entities": entities,
+                "total": count_response.count if hasattr(count_response, 'count') else len(entities),
+                "limit": limit,
+                "offset": offset
+            }
+            
+        except Exception as e:
+            print(f"Error getting entities with timeline: {e}")
+            return {
+                "entities": [],
+                "total": 0,
+                "limit": limit,
+                "offset": offset,
+                "error": str(e)
+            }
 
