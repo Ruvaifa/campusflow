@@ -68,6 +68,29 @@ async def search_profiles(
     """Search profiles by name, email, or department"""
     return db.search_profiles(query, field)
 
+@app.get("/api/entities")
+async def get_entities(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    status: Optional[str] = Query(None, regex="^(active|recent|inactive|all)$"),
+    search: Optional[str] = None
+):
+    """
+    Get entities with enriched data including activity status and last seen
+    Supports filtering by status and searching by name/email
+    """
+    return db.get_entities_enriched(limit=limit, offset=offset, status=status, search=search)
+
+@app.get("/api/entities/{entity_id}")
+async def get_entity_details(entity_id: str):
+    """
+    Get detailed entity information including profile and recent activity summary
+    """
+    entity = db.get_entity_details(entity_id)
+    if not entity:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    return entity
+
 # ============================================
 # SWIPE ENDPOINTS
 # ============================================
@@ -455,4 +478,4 @@ async def get_inactive_entities(
 # MAIN
 # ============================================
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)

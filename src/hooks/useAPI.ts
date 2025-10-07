@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, Profile, EntityResolution, ActivityTimeline, DashboardStats, SecurityStats, Alert } from '@/lib/api';
+import { api, Profile, EntityResolution, ActivityTimeline, DashboardStats, SecurityStats, Alert, Entity, EntityDetails } from '@/lib/api';
 
 // ============================================
 // PROFILE HOOKS
@@ -32,6 +32,33 @@ export function useProfileSearch(query: string, field: 'name' | 'email' | 'depar
     queryFn: () => api.profiles.search(query, field),
     enabled: query.length > 0,
     staleTime: 2 * 60 * 1000,
+  });
+}
+
+// ============================================
+// ENTITY HOOKS (Enriched with activity data)
+// ============================================
+export function useEntities(
+  limit = 100, 
+  offset = 0, 
+  status?: 'active' | 'recent' | 'inactive' | 'all',
+  search?: string
+) {
+  return useQuery({
+    queryKey: ['entities', limit, offset, status, search],
+    queryFn: () => api.entities.getAll(limit, offset, status, search),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchInterval: 30 * 1000, // Refetch every 30 seconds for live updates
+  });
+}
+
+export function useEntityDetails(entityId: string) {
+  return useQuery({
+    queryKey: ['entity-details', entityId],
+    queryFn: () => api.entities.getById(entityId),
+    enabled: !!entityId,
+    staleTime: 1 * 60 * 1000, // 1 minute
+    refetchInterval: 15 * 1000, // Refetch every 15 seconds for live activity updates
   });
 }
 

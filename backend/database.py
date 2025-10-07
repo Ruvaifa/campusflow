@@ -208,3 +208,164 @@ class DatabaseService:
             "total_activities": len(recent_swipes.data),
             "resolution_accuracy": None  # TODO: Implement real calculation
         }
+    
+    @staticmethod
+    def get_entities_enriched(limit: int = 100, offset: int = 0, status: Optional[str] = None, search: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get entities with enriched data including activity status and last seen
+        Supports filtering by status and searching by name/email
+        """
+        try:
+            # Get profiles with optional search
+            query = supabase.table("profiles").select("*")
+            
+            if search:
+                # Search in name, email, or department
+                query = query.or_(f"name.ilike.%{search}%,email.ilike.%{search}%,department.ilike.%{search}%")
+            
+            profiles_response = query.range(offset, offset + limit - 1).execute()
+            profiles = profiles_response.data
+            
+            # If no profiles, return empty result
+            if not profiles:
+                return {
+                    "entities": [],
+                    "total": 0,
+                    "limit": limit,
+                    "offset": offset
+                }
+            
+            # Enrich each profile with activity data
+            enriched_entities = []
+            cutoff_active = (datetime.now() - timedelta(hours=1)).isoformat()
+            cutoff_recent = (datetime.now() - timedelta(hours=24)).isoformat()
+            
+            for profile in profiles:
+                entity_id = profile.get("entity_id")
+                
+                # Simple version - just get basic profile data without activity queries for now
+                last_seen = None
+                last_location = "Unknown"
+                entity_status = "inactive"
+                
+                # Calculate confidence score (based on data completeness)
+                confidence = 0.5
+                if profile.get("card_id"):
+                    confidence += 0.15
+                if profile.get("device_hash"):
+                    confidence += 0.15
+                if profile.get("face_id"):
+                    confidence += 0.20
+                
+                # Filter by status if specified
+                if status and status != "all" and entity_status != status:
+                    continue
+                
+                enriched_entities.append({
+                    **profile,
+                    "last_seen": last_seen,
+                    "last_location": last_location,
+                    "status": entity_status,
+                    "confidence": round(confidence, 2)
+                })
+            
+            return {
+                "entities": enriched_entities,
+                "total": len(enriched_entities),
+                "limit": limit,
+                "offset": offset
+            }
+        except Exception as e:
+            print(f"Error in get_entities_enriched: {e}")
+            return {
+                "entities": [],
+                "total": 0,
+                "limit": limit,
+                "offset": offset,
+                "error": str(e)
+            }
+    
+    @staticmethod
+    def get_entity_details(entity_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get detailed entity information including profile and recent activity summary
+        """
+        # Get profile
+        profile = DatabaseService.get_profile_by_entity_id(entity_id)
+        if not profile:
+            return None
+        
+        # Get activity counts (last 7 days)
+        cutoff_date = (datetime.now() - timedelta(days=7)).isoformat()
+        
+        swipes = supabase.table("swipes").select("*").eq("identity", entity_id).gte("timestamp", cutoff_date).execute()
+        wifi_logs = supabase.table("wifi_logs").select("*").eq("identity", entity_id).gte("timestamp", cutoff_date).execute()
+        lab_bookings = supabase.table("lab_bookings").select("*").eq("entity_id", entity_id).gte("start_time", cutoff_date).execute()
+        library_checkouts = supabase.table("library_checkouts").select("*").eq("entity_id", entity_id).gte("timestamp", cutoff_date).execute()
+        
+        # Get latest activity
+        all_activities = []
+        for swipe in swipes.data:
+            all_activities.append({
+                "timestamp": swipe.get("timestamp"),
+                "type": "swipe",
+                "location": swipe.get("location_id", "Unknown Location"),
+                "details": f"Card swipe at {swipe.get('location_id', 'Unknown Location')}"
+            })
+        
+        for wifi in wifi_logs.data:
+            all_activities.append({
+                "timestamp": wifi.get("timestamp"),
+                "type": "wifi",
+                "location": wifi.get("ap_id", "Unknown AP"),
+                "details": f"WiFi connection at {wifi.get('ap_id', 'Unknown AP')}"
+            })
+        
+        for booking in lab_bookings.data:
+            all_activities.append({
+                "timestamp": booking.get("start_time"),
+                "type": "booking",
+                "location": booking.get("room_id", "Unknown Room"),
+                "details": f"Lab booking: {booking.get('room_id', 'Unknown Room')}"
+            })
+        
+        for checkout in library_checkouts.data:
+            all_activities.append({
+                "timestamp": checkout.get("timestamp"),
+                "type": "checkout",
+                "location": "Library",
+                "details": f"Checked out: {checkout.get('book_id', 'Unknown Book')}"
+            })
+        
+        # Sort activities by timestamp
+        all_activities.sort(key=lambda x: x["timestamp"] if x["timestamp"] else "", reverse=True)
+        
+        # Calculate status
+        if all_activities:
+            latest_time = all_activities[0]["timestamp"]
+            cutoff_active = (datetime.now() - timedelta(hours=1)).isoformat()
+            cutoff_recent = (datetime.now() - timedelta(hours=24)).isoformat()
+            
+            if latest_time >= cutoff_active:
+                status = "active"
+            elif latest_time >= cutoff_recent:
+                status = "recent"
+            else:
+                status = "inactive"
+        else:
+            status = "inactive"
+        
+        return {
+            "profile": profile,
+            "status": status,
+            "activity_summary": {
+                "swipes": len(swipes.data),
+                "wifi_connections": len(wifi_logs.data),
+                "lab_bookings": len(lab_bookings.data),
+                "library_checkouts": len(library_checkouts.data),
+                "total_activities": len(all_activities)
+            },
+            "recent_activities": all_activities[:20],  # Return last 20 activities
+            "last_seen": all_activities[0]["timestamp"] if all_activities else None,
+            "last_location": all_activities[0]["location"] if all_activities else "Unknown"
+        }

@@ -119,6 +119,40 @@ export interface Alert {
   resolved_by?: string;
 }
 
+export interface Entity extends Profile {
+  last_seen?: string;
+  last_location?: string;
+  status: 'active' | 'recent' | 'inactive';
+  confidence: number;
+}
+
+export interface EntityDetails {
+  profile: Profile;
+  status: 'active' | 'recent' | 'inactive';
+  activity_summary: {
+    swipes: number;
+    wifi_connections: number;
+    lab_bookings: number;
+    library_checkouts: number;
+    total_activities: number;
+  };
+  recent_activities: Array<{
+    timestamp: string;
+    type: string;
+    location: string;
+    details: string;
+  }>;
+  last_seen?: string;
+  last_location?: string;
+}
+
+export interface EntitiesResponse {
+  entities: Entity[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -160,6 +194,27 @@ export const profileAPI = {
 
   search: async (query: string, field: 'name' | 'email' | 'department' = 'name'): Promise<Profile[]> => {
     return fetchAPI<Profile[]>(`/api/profiles/search/${encodeURIComponent(query)}?field=${field}`);
+  },
+};
+
+// ============================================
+// ENTITY API (Enriched with activity data)
+// ============================================
+export const entityAPI = {
+  getAll: async (
+    limit = 100, 
+    offset = 0, 
+    status?: 'active' | 'recent' | 'inactive' | 'all',
+    search?: string
+  ): Promise<EntitiesResponse> => {
+    const params = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
+    if (status) params.append('status', status);
+    if (search) params.append('search', search);
+    return fetchAPI<EntitiesResponse>(`/api/entities?${params}`);
+  },
+
+  getById: async (entityId: string): Promise<EntityDetails> => {
+    return fetchAPI<EntityDetails>(`/api/entities/${entityId}`);
   },
 };
 
@@ -298,6 +353,7 @@ export const healthAPI = {
 // Export all APIs as a single object
 export const api = {
   profiles: profileAPI,
+  entities: entityAPI,
   swipes: swipeAPI,
   wifi: wifiAPI,
   labBookings: labBookingAPI,
