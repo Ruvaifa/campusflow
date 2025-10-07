@@ -3,8 +3,23 @@
  * Uses React Query for caching, loading states, and error handling
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, Profile, EntityResolution, ActivityTimeline, DashboardStats, SecurityStats, Alert } from '@/lib/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { 
+  Alert, 
+  AlertsResponse, 
+  EntityDetails, 
+  Entity, 
+  EntitiesResponse, 
+  Swipe, 
+  WiFiLog, 
+  LabBooking, 
+  LibraryCheckout, 
+  DashboardStats, 
+  SecurityStats, 
+  ActivityTimeline,
+  alertsAPI,
+  api
+} from '@/lib/api';
 
 // ============================================
 // PROFILE HOOKS
@@ -163,12 +178,32 @@ export function useSecurityStats() {
 // ============================================
 // ALERTS HOOKS
 // ============================================
-export function useAlerts(status?: Alert['status'], severity?: Alert['severity']) {
-  return useQuery({
-    queryKey: ['alerts', status, severity],
-    queryFn: () => api.alerts.getAll(status, severity),
+export function useAlerts(status?: Alert['status'], limit?: number) {
+  return useQuery<AlertsResponse>({
+    queryKey: ['alerts', status, limit],
+    queryFn: () => alertsAPI.getAll(status, limit),
     staleTime: 30 * 1000,
     refetchInterval: 30 * 1000, // Refetch every 30 seconds for real-time updates
+    select: (data) => {
+      // Handle new response format that returns { alerts: [], summary: {} }
+      if (data && typeof data === 'object' && 'alerts' in data) {
+        return data;
+      }
+      // Fallback for old format (direct array)
+      return { alerts: Array.isArray(data) ? data : [], summary: null };
+    },
+  });
+}
+
+export function useUpdateAlertStatus() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ entityId, status }: { entityId: string; status: Alert['status'] }) =>
+      alertsAPI.updateStatus(entityId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+    },
   });
 }
 

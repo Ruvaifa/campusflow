@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   Activity, 
   Users, 
@@ -25,14 +26,20 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import { useDashboardStats, useProfiles, useSwipes, useAlerts } from '@/hooks/useAPI';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   // Fetch real data from API
   const { data: dashboardStats, isLoading: statsLoading } = useDashboardStats();
   const { data: recentProfiles, isLoading: profilesLoading } = useProfiles(4, 0);
   const { data: recentSwipes } = useSwipes(100);
-  const { data: alerts } = useAlerts('active');
+  const { data: alertsData } = useAlerts('active');
+
+  // Extract alerts array from the response
+  const alerts = alertsData?.alerts || [];
+  const alertsSummary = alertsData?.summary;
 
   // Calculate stats from real data
   const stats = [
@@ -54,7 +61,7 @@ const Dashboard = () => {
     },
     { 
       title: 'Security Alerts', 
-      value: alerts?.length?.toString() || '0', 
+      value: alertsSummary?.total_alerts?.toString() || alerts?.length?.toString() || '0', 
       change: '+3', 
       trend: 'up', 
       icon: AlertTriangle,
@@ -99,7 +106,7 @@ const Dashboard = () => {
   })) || [];
 
   // Use real alerts from API
-  const recentAlerts = alerts?.slice(0, 3).map((alert, index) => ({
+  const recentAlerts = alerts?.slice(0, 3)?.map((alert: any, index: number) => ({
     id: index + 1,
     type: alert.alert_type,
     entity: alert.entity_id || 'Unknown',
@@ -273,8 +280,16 @@ const Dashboard = () => {
 
         {/* Recent Alerts */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Security Alerts</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/dashboard/alerts')}
+              className="text-xs"
+            >
+              View All
+            </Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

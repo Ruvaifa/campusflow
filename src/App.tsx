@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Entities from "./pages/Entities";
 import SecurityMonitoring from "./pages/SecurityMonitoring";
+import Alerts from "./pages/Alerts";
 import Settings from "./pages/Settings";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,7 @@ const App = () => (
                 <Route index element={<Dashboard />} />
                 <Route path="entities" element={<Entities />} />
                 <Route path="security-monitoring" element={<SecurityMonitoring />} />
+                <Route path="alerts" element={<Alerts />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
