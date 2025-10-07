@@ -1,2 +1,8 @@
 node_modules
 backend/__pycache__
+INTEGRATION_COMPLETE.md 
+BACKEND_INTEGRATION_GUIDE.md 
+backend/README.md 
+ENTITIES_INTEGRATION.md
+IMPLEMENTATION_SUMMARY.md
+backend/migrations/
