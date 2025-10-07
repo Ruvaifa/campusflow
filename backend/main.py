@@ -9,6 +9,8 @@ from models import (
     Profile, Swipe, WiFiLog, LabBooking, LibraryCheckout,
     Note, CCTVFrame, FaceEmbedding, EntityResolutionResult
 )
+from entity_resolution import EntityResolver
+from predictive_analytics import PredictiveMonitor
 
 app = FastAPI(
     title="Campus Entity Resolution & Security API",
@@ -232,6 +234,98 @@ async def get_entity_timeline(
     
     timeline = db.get_entity_activity_timeline(entity_id, days=days)
     return timeline
+
+# ============================================
+# ADVANCED ENTITY RESOLUTION ENDPOINTS
+# ============================================
+@app.get("/api/resolve/advanced")
+async def resolve_entity_advanced(
+    name: Optional[str] = None,
+    email: Optional[str] = None,
+    card_id: Optional[str] = None,
+    device_hash: Optional[str] = None,
+    face_id: Optional[str] = None,
+    student_id: Optional[str] = None
+):
+    """
+    Advanced entity resolution with fuzzy matching and confidence scoring
+    Supports: exact matching, fuzzy name matching, multi-identifier resolution
+    Returns confidence scores and evidence for matches
+    """
+    if not any([name, email, card_id, device_hash, face_id, student_id]):
+        raise HTTPException(
+            status_code=400,
+            detail="At least one identifier required"
+        )
+    
+    result = EntityResolver.resolve_entity(
+        name=name,
+        email=email,
+        card_id=card_id,
+        device_hash=device_hash,
+        face_id=face_id,
+        student_id=student_id
+    )
+    
+    return result
+
+@app.get("/api/entities/{entity_id}/provenance")
+async def get_entity_provenance(entity_id: str):
+    """
+    Get provenance information showing which data sources contributed to entity profile
+    Tracks data lineage and confidence levels
+    """
+    result = EntityResolver.get_provenance(entity_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.get("/api/entities/{entity_id}/cross-source-links")
+async def get_cross_source_links(entity_id: str):
+    """
+    Get all cross-source linkages showing how records are connected across tables
+    Demonstrates multi-modal fusion quality
+    """
+    result = EntityResolver.get_cross_source_links(entity_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+# ============================================
+# PREDICTIVE MONITORING & ML ENDPOINTS
+# ============================================
+@app.get("/api/entities/{entity_id}/predict-location")
+async def predict_next_location(entity_id: str):
+    """
+    Predict next likely location based on historical patterns
+    Uses ML-based pattern recognition with explainability
+    """
+    result = PredictiveMonitor.predict_next_location(entity_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.get("/api/entities/{entity_id}/detect-anomalies")
+async def detect_anomalies(entity_id: str):
+    """
+    Detect anomalous behavior patterns with statistical analysis
+    Provides evidence-based explanations for detected anomalies
+    """
+    result = PredictiveMonitor.detect_anomalies(entity_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.get("/api/entities/{entity_id}/infer-missing-data")
+async def infer_missing_data(entity_id: str):
+    """
+    Infer missing data points using ML-based inference
+    Provides confidence scores and justification for each inference
+    """
+    result = PredictiveMonitor.infer_missing_data(entity_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
 
 # ============================================
 # DASHBOARD & ANALYTICS ENDPOINTS

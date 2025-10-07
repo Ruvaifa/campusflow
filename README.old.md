@@ -1,20 +1,3 @@
-# Campus Entity Resolver
-
-An advanced entity resolution and tracking system built for IITG Hackathon Round 2.
-
-🚀 **[See HACKATHON_FEATURES.md for complete feature documentation](./HACKATHON_FEATURES.md)**
-
-## Features
-
-- **Advanced Entity Resolution (25%)**: Multi-identifier matching with 92%+ accuracy using fuzzy name matching
-- **Cross-Source Linking (25%)**: Link entities across Card, Device, Face recognition systems with 85-95% confidence
-- **Timeline Generation (20%)**: Comprehensive activity tracking with 7000+ timeline records
-- **Predictive Monitoring (15%)**: ML-based location prediction and anomaly detection
-- **Dashboard UX (10%)**: Modern React UI with 6 advanced analytics tabs
-- **Robustness & Privacy (5%)**: Handles noisy data, partial identifiers, and privacy-preserving operations
-
-## Quick Start
-
 Follow these steps:
 
 ```sh
