@@ -1,31 +1,44 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Lock, Mail } from 'lucide-react';
+import { Shield, Lock, Mail, User } from 'lucide-react';
 import { toast } from 'sonner';
 
-const Login = () => {
+const Signup = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { signup } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      toast.success('Login successful!');
+      await signup(email, password, name);
+      toast.success('Account created! Please check your email to verify your account.');
       navigate('/dashboard');
     } catch (error: any) {
-      console.error('Login error:', error);
-      toast.error(error.message || 'Login failed. Please check your credentials.');
+      console.error('Signup error:', error);
+      toast.error(error.message || 'Signup failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -41,15 +54,33 @@ const Login = () => {
             <Shield className="w-8 h-8 text-primary-foreground" />
           </div>
           <div>
-            <CardTitle className="text-3xl font-bold tracking-tight">Ethos</CardTitle>
+            <CardTitle className="text-3xl font-bold tracking-tight">Create Account</CardTitle>
             <CardDescription className="text-base mt-2">
-              Campus Security & Entity Resolution System
+              Join the Campus Security System
             </CardDescription>
           </div>
         </CardHeader>
         
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium">
+                Full Name
+              </Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="pl-10 h-11"
+                  required
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
                 Email Address
@@ -59,7 +90,7 @@ const Login = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@ethos.edu"
+                  placeholder="john@ethos.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 h-11"
@@ -82,6 +113,26 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 h-11"
                   required
+                  minLength={6}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-sm font-medium">
+                Confirm Password
+              </Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pl-10 h-11"
+                  required
+                  minLength={6}
                 />
               </div>
             </div>
@@ -91,16 +142,16 @@ const Login = () => {
               className="w-full h-11 text-base font-medium shadow-md hover:shadow-lg transition-all"
               disabled={isLoading}
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Creating Account...' : 'Sign Up'}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm">
             <p className="text-muted-foreground">
-              Don't have an account?{' '}
-              <a href="/signup" className="text-primary hover:underline font-medium">
-                Sign up
-              </a>
+              Already have an account?{' '}
+              <Link to="/login" className="text-primary hover:underline font-medium">
+                Sign in
+              </Link>
             </p>
           </div>
         </CardContent>
@@ -109,4 +160,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Signup;
