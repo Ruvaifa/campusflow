@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List
+from datetime import datetime
 import uvicorn
 from database import DatabaseService
 from models import (
@@ -63,10 +64,33 @@ async def get_profile(entity_id: str):
 @app.get("/api/profiles/search/{query}")
 async def search_profiles(
     query: str,
-    field: str = Query("name", regex="^(name|email|department)$")
+    field: str = Query("name", pattern="^(name|email|department)$")
 ):
     """Search profiles by name, email, or department"""
     return db.search_profiles(query, field)
+
+@app.get("/api/entities")
+async def get_entities(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    status: Optional[str] = Query(None, pattern="^(active|recent|inactive|all)$"),
+    search: Optional[str] = None
+):
+    """
+    Get entities with enriched data including activity status and last seen
+    Supports filtering by status and searching by name/email
+    """
+    return db.get_entities_enriched(limit=limit, offset=offset, status=status, search=search)
+
+@app.get("/api/entities/{entity_id}")
+async def get_entity_details(entity_id: str):
+    """
+    Get detailed entity information including profile and recent activity summary
+    """
+    entity = db.get_entity_details(entity_id)
+    if not entity:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    return entity
 
 # ============================================
 # SWIPE ENDPOINTS
@@ -217,50 +241,32 @@ async def get_activity_heatmap(days: int = Query(7, ge=1, le=30)):
 # ============================================
 # ALERTS & SECURITY ENDPOINTS
 # ============================================
+@app.post("/api/test/populate-activity")
+async def populate_test_activity():
+    """Populate test activity data for demonstration"""
+    return db.populate_test_activity_data()
+
 @app.get("/api/alerts")
 async def get_alerts(
-    status: Optional[str] = Query(None, regex="^(active|resolved|investigating)$"),
-    severity: Optional[str] = Query(None, regex="^(critical|high|medium|low)$")
+    status: Optional[str] = Query(None, pattern="^(active|resolved|investigating)$"),
+    limit: int = Query(100, ge=1, le=500)
 ):
-    """Get security alerts (mock data for now)"""
-    # This would query a real alerts table
-    # Mock implementation
-    alerts = [
-        {
-            "id": "alert-1",
-            "entity_id": "E001",
-            "alert_type": "Unauthorized Access",
-            "severity": "critical",
-            "description": "Multiple failed access attempts detected",
-            "location": "Building A - Lab 301",
-            "timestamp": "2025-10-04T10:30:00Z",
-            "status": "active"
-        },
-        {
-            "id": "alert-2",
-            "entity_id": "E042",
-            "alert_type": "Suspicious Activity",
-            "severity": "high",
-            "description": "Unusual access pattern detected",
-            "location": "Library - Restricted Section",
-            "timestamp": "2025-10-04T09:15:00Z",
-            "status": "investigating"
-        }
-    ]
-    
-    # Filter by status and severity if provided
-    if status:
-        alerts = [a for a in alerts if a["status"] == status]
-    if severity:
-        alerts = [a for a in alerts if a["severity"] == severity]
-    
-    return alerts
+    """Get security alerts based on entity inactivity patterns"""
+    return db.generate_security_alerts(status=status, limit=limit)
+
+@app.put("/api/alerts/{entity_id}")
+async def update_alert(entity_id: str, status: str = Query(..., pattern="^(active|resolved|investigating)$")):
+    """Update alert status"""
+    updated_alert = db.update_alert_status(entity_id, status)
+    if not updated_alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return updated_alert
 
 @app.get("/api/security/entity-history")
 async def get_entity_history(
     entity_id: Optional[str] = None,
-    asset_type: str = Query("all", regex="^(all|swipe|wifi|lab|library|cctv)$"),
-    time_range: str = Query("today", regex="^(today|24h|7d|30d|custom)$"),
+    asset_type: str = Query("all", pattern="^(all|swipe|wifi|lab|library|cctv)$"),
+    time_range: str = Query("today", pattern="^(today|24h|7d|30d|custom)$"),
     start_time: Optional[str] = None,
     end_time: Optional[str] = None
 ):

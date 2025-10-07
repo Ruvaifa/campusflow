@@ -33,6 +33,7 @@ const DashboardLayout = () => {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Users, label: 'Entities', path: '/dashboard/entities' },
     { icon: Shield, label: 'Security Monitoring', path: '/dashboard/security-monitoring' },
+    { icon: Bell, label: 'Alerts', path: '/dashboard/alerts' },
     { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
   ];
 

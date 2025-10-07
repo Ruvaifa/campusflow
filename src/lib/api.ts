@@ -119,6 +119,51 @@ export interface Alert {
   resolved_by?: string;
 }
 
+export interface Entity extends Profile {
+  last_seen?: string;
+  last_location?: string;
+  status: 'active' | 'recent' | 'inactive';
+  confidence: number;
+}
+
+export interface EntityDetails {
+  profile: Profile;
+  status: 'active' | 'recent' | 'inactive';
+  activity_summary: {
+    swipes: number;
+    wifi_connections: number;
+    lab_bookings: number;
+    library_checkouts: number;
+    total_activities: number;
+  };
+  recent_activities: Array<{
+    timestamp: string;
+    type: string;
+    location: string;
+    details: string;
+  }>;
+  last_seen?: string;
+  last_location?: string;
+}
+
+export interface EntitiesResponse {
+  entities: Entity[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AlertsResponse {
+  alerts: Alert[];
+  summary: {
+    total_entities: number;
+    active_entities: number;
+    warning_entities: number;
+    alert_entities: number;
+    total_alerts: number;
+  };
+}
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -278,11 +323,16 @@ export const securityAPI = {
 // ALERTS API
 // ============================================
 export const alertsAPI = {
-  getAll: async (status?: Alert['status'], severity?: Alert['severity']): Promise<Alert[]> => {
+  getAll: async (status?: Alert['status'], limit?: number): Promise<AlertsResponse> => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
-    if (severity) params.append('severity', severity);
-    return fetchAPI<Alert[]>(`/api/alerts?${params}`);
+    if (limit) params.append('limit', limit.toString());
+    return fetchAPI<AlertsResponse>(`/api/alerts?${params}`);
+  },
+  updateStatus: async (entityId: string, status: Alert['status']): Promise<Alert> => {
+    return fetchAPI<Alert>(`/api/alerts/${entityId}?status=${status}`, {
+      method: 'PUT',
+    });
   },
 };
 
