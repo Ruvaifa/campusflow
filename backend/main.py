@@ -92,6 +92,27 @@ async def get_entity_details(entity_id: str):
         raise HTTPException(status_code=404, detail="Entity not found")
     return entity
 
+@app.get("/api/entities/{entity_id}/timeline")
+async def get_entity_timeline(entity_id: str):
+    """
+    Get timeline data for a specific entity including all activities and current location
+    """
+    timeline = db.get_entity_timeline(entity_id)
+    if not timeline:
+        raise HTTPException(status_code=404, detail="Timeline not found for entity")
+    return timeline
+
+@app.get("/api/entities-with-timeline")
+async def get_entities_with_timeline(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    search: Optional[str] = None
+):
+    """
+    Get all entities with their timeline data (current location, last seen)
+    """
+    return db.get_all_entities_with_timeline(limit=limit, offset=offset, search=search)
+
 # ============================================
 # SWIPE ENDPOINTS
 # ============================================
