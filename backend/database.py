@@ -3,6 +3,8 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
+from difflib import SequenceMatcher
+import re
 
 load_dotenv("creds.env")
 
