@@ -106,18 +106,20 @@ const Entities = () => {
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [advancedLoading, setAdvancedLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'recent' | 'inactive'>('all');
   const { toast } = useToast();
 
   // Fetch entities on component mount
   useEffect(() => {
     fetchEntities();
-  }, [searchQuery]);
+  }, [searchQuery, statusFilter]);
 
   const fetchEntities = async () => {
     try {
       setLoading(true);
       const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
-      const response = await fetch(`http://localhost:8000/api/entities-with-timeline?limit=50${searchParam}`);
+      const statusParam = statusFilter !== 'all' ? `&status=${statusFilter}` : '';
+      const response = await fetch(`http://localhost:8000/api/entities-with-timeline?limit=50${searchParam}${statusParam}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch entities');
@@ -277,6 +279,35 @@ const Entities = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          
+          {/* Status Filter */}
+          <div className="mt-3 flex gap-2">
+            <Button
+              variant={statusFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('all')}
+              className="flex-1"
+            >
+              All
+            </Button>
+            <Button
+              variant={statusFilter === 'active' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('active')}
+              className="flex-1"
+            >
+              Active
+            </Button>
+            <Button
+              variant={statusFilter === 'inactive' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('inactive')}
+              className="flex-1"
+            >
+              Inactive
+            </Button>
+          </div>
+          
           <div className="mt-4 text-sm text-muted-foreground">
             {loading ? (
               <div className="flex items-center gap-2">

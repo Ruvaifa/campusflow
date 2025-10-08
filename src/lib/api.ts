@@ -301,12 +301,32 @@ export const entityResolutionAPI = {
 // DASHBOARD API
 // ============================================
 export const dashboardAPI = {
-  getStats: async (): Promise<DashboardStats> => {
-    return fetchAPI<DashboardStats>('/api/dashboard/stats');
+  getStats: async (targetDate?: string, targetTime?: string): Promise<DashboardStats> => {
+    const params = new URLSearchParams();
+    if (targetDate) params.append('target_date', targetDate);
+    if (targetTime) params.append('target_time', targetTime);
+    const queryString = params.toString();
+    return fetchAPI<DashboardStats>(`/api/dashboard/stats${queryString ? `?${queryString}` : ''}`);
   },
 
   getActivityHeatmap: async (days = 7): Promise<any> => {
     return fetchAPI(`/api/analytics/activity-heatmap?days=${days}`);
+  },
+
+  getWeeklyActivity: async (targetDate?: string, targetTime?: string): Promise<any> => {
+    const params = new URLSearchParams();
+    if (targetDate) params.append('target_date', targetDate);
+    if (targetTime) params.append('target_time', targetTime);
+    const queryString = params.toString();
+    return fetchAPI(`/api/analytics/weekly-activity${queryString ? `?${queryString}` : ''}`);
+  },
+
+  getSourceDistribution: async (targetDate?: string, targetTime?: string): Promise<any> => {
+    const params = new URLSearchParams();
+    if (targetDate) params.append('target_date', targetDate);
+    if (targetTime) params.append('target_time', targetTime);
+    const queryString = params.toString();
+    return fetchAPI(`/api/analytics/source-distribution${queryString ? `?${queryString}` : ''}`);
   },
 };
 

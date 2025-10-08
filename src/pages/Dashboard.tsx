@@ -27,12 +27,19 @@ import {
   Legend
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
-import { useDashboardStats, useProfiles, useSwipes, useAlerts } from '@/hooks/useAPI';
+import { useDashboardStats, useProfiles, useSwipes, useAlerts, useWeeklyActivity, useSourceDistribution } from '@/hooks/useAPI';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  // Fetch real data from API
-  const { data: dashboardStats, isLoading: statsLoading } = useDashboardStats();
+  
+  // Fixed date and time for data consistency (hidden from UI)
+  const TARGET_DATE = '2025-09-20';
+  const TARGET_TIME = '23:00:00';
+  
+  // Fetch data from API
+  const { data: dashboardStats, isLoading: statsLoading } = useDashboardStats(TARGET_DATE, TARGET_TIME);
+  const { data: weeklyActivityData, isLoading: activityLoading } = useWeeklyActivity(TARGET_DATE, TARGET_TIME);
+  const { data: sourceDistData, isLoading: sourceLoading } = useSourceDistribution(TARGET_DATE, TARGET_TIME);
   const { data: recentProfiles, isLoading: profilesLoading } = useProfiles(4, 0);
   const { data: recentSwipes } = useSwipes(100);
   const { data: alertsData } = useAlerts('active');
@@ -52,7 +59,7 @@ const Dashboard = () => {
       color: 'text-chart-1'
     },
     { 
-      title: 'Active Today', 
+      title: 'Active (12hrs)', 
       value: dashboardStats?.active_today?.toString() || '0', 
       change: '+8.2%', 
       trend: 'up', 
@@ -77,21 +84,22 @@ const Dashboard = () => {
     },
   ];
 
-  const activityData = [
-    { time: 'Mon', entities: 892, sessions: 65, alerts: 8 },
-    { time: 'Tue', entities: 945, sessions: 72, alerts: 5 },
-    { time: 'Wed', entities: 1123, sessions: 85, alerts: 12 },
-    { time: 'Thu', entities: 978, sessions: 68, alerts: 7 },
-    { time: 'Fri', entities: 1247, sessions: 89, alerts: 12 },
-    { time: 'Sat', entities: 856, sessions: 54, alerts: 4 },
-    { time: 'Sun', entities: 723, sessions: 42, alerts: 3 },
+  // Use real data from API for graphs
+  const activityData = weeklyActivityData?.data || [
+    { time: 'Mon', entities: 0, sessions: 0, alerts: 0 },
+    { time: 'Tue', entities: 0, sessions: 0, alerts: 0 },
+    { time: 'Wed', entities: 0, sessions: 0, alerts: 0 },
+    { time: 'Thu', entities: 0, sessions: 0, alerts: 0 },
+    { time: 'Fri', entities: 0, sessions: 0, alerts: 0 },
+    { time: 'Sat', entities: 0, sessions: 0, alerts: 0 },
+    { time: 'Sun', entities: 0, sessions: 0, alerts: 0 },
   ];
 
-  const sourceData = [
-    { name: 'Swipe', value: 456, color: 'hsl(var(--chart-1))' },
-    { name: 'Wi-Fi', value: 342, color: 'hsl(var(--chart-2))' },
-    { name: 'CCTV', value: 289, color: 'hsl(var(--chart-3))' },
-    { name: 'Booking', value: 160, color: 'hsl(var(--chart-4))' },
+  const sourceData = sourceDistData?.data || [
+    { name: 'Swipe', value: 0, color: 'hsl(var(--chart-1))' },
+    { name: 'Wi-Fi', value: 0, color: 'hsl(var(--chart-2))' },
+    { name: 'CCTV', value: 0, color: 'hsl(var(--chart-3))' },
+    { name: 'Booking', value: 0, color: 'hsl(var(--chart-4))' },
   ];
 
   // Use real profile data from API

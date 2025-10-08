@@ -146,12 +146,30 @@ export function useEntityTimeline(entityId: string, days = 7) {
 // ============================================
 // DASHBOARD HOOKS
 // ============================================
-export function useDashboardStats() {
+export function useDashboardStats(targetDate?: string, targetTime?: string) {
   return useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: () => api.dashboard.getStats(),
+    queryKey: ['dashboard-stats', targetDate, targetTime],
+    queryFn: () => api.dashboard.getStats(targetDate, targetTime),
     staleTime: 1 * 60 * 1000,
     refetchInterval: 30 * 1000, // Refetch every 30 seconds
+  });
+}
+
+export function useWeeklyActivity(targetDate?: string, targetTime?: string) {
+  return useQuery({
+    queryKey: ['weekly-activity', targetDate, targetTime],
+    queryFn: () => api.dashboard.getWeeklyActivity(targetDate, targetTime),
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 60 * 1000, // Refetch every minute
+  });
+}
+
+export function useSourceDistribution(targetDate?: string, targetTime?: string) {
+  return useQuery({
+    queryKey: ['source-distribution', targetDate, targetTime],
+    queryFn: () => api.dashboard.getSourceDistribution(targetDate, targetTime),
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 60 * 1000, // Refetch every minute
   });
 }
 
