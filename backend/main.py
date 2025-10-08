@@ -331,9 +331,12 @@ async def infer_missing_data(entity_id: str):
 # DASHBOARD & ANALYTICS ENDPOINTS
 # ============================================
 @app.get("/api/dashboard/stats")
-async def get_dashboard_stats():
-    """Get dashboard statistics"""
-    return db.get_dashboard_stats()
+async def get_dashboard_stats(
+    target_date: Optional[str] = Query(None, description="Target date in YYYY-MM-DD format"),
+    target_time: Optional[str] = Query(None, description="Target time in HH:MM:SS format")
+):
+    """Get dashboard statistics for a specific date and time"""
+    return db.get_dashboard_stats(target_date=target_date, target_time=target_time)
 
 @app.get("/api/security/stats")
 async def get_security_stats():
@@ -352,6 +355,22 @@ async def get_activity_heatmap(days: int = Query(7, ge=1, le=30)):
             for i in range(24) for j in range(days)
         ]
     }
+
+@app.get("/api/analytics/weekly-activity")
+async def get_weekly_activity(
+    target_date: Optional[str] = Query(None, description="Target date in YYYY-MM-DD format"),
+    target_time: Optional[str] = Query(None, description="Target time in HH:MM:SS format")
+):
+    """Get weekly activity data for dashboard charts"""
+    return db.get_weekly_activity_data(target_date=target_date, target_time=target_time)
+
+@app.get("/api/analytics/source-distribution")
+async def get_source_distribution(
+    target_date: Optional[str] = Query(None, description="Target date in YYYY-MM-DD format"),
+    target_time: Optional[str] = Query(None, description="Target time in HH:MM:SS format")
+):
+    """Get data source distribution for dashboard charts"""
+    return db.get_source_distribution_data(target_date=target_date, target_time=target_time)
 
 # ============================================
 # ALERTS & SECURITY ENDPOINTS

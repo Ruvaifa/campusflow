@@ -49,7 +49,7 @@ const SecurityMonitoring = () => {
   const [loading, setLoading] = useState(false);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<any[]>([]);
-  const [useMockData, setUseMockData] = useState(true);
+  const [useMockData, setUseMockData] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
