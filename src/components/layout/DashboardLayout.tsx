@@ -13,7 +13,8 @@ import {
   Sun,
   Moon,
   Menu,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -35,6 +36,7 @@ const DashboardLayout = () => {
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: Sparkles, label: 'SpaceFlow', path: '/dashboard/spaceflow' },
     { icon: Users, label: 'Entities', path: '/dashboard/entities' },
     { icon: Shield, label: 'Security Monitoring', path: '/dashboard/security-monitoring' },
     { icon: Bell, label: 'Alerts', path: '/dashboard/alerts' },
