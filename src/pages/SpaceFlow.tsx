@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   AlertTriangle, 
   TrendingUp, 
@@ -102,6 +103,7 @@ interface Forecast {
 }
 
 const SpaceFlow = () => {
+  const { theme } = useTheme();
   const [selectedLocation, setSelectedLocation] = useState<LocationMarker | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
@@ -317,18 +319,30 @@ const SpaceFlow = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white overflow-hidden">
+    <div className={`h-screen flex flex-col overflow-hidden ${
+      theme === 'dark' 
+        ? 'bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white' 
+        : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 text-slate-900'
+    }`}>
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ top: '10%', left: '20%' }} />
-        <div className="absolute w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" style={{ bottom: '10%', right: '20%' }} />
+        <div className={`absolute w-96 h-96 rounded-full blur-3xl animate-pulse ${
+          theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-400/30'
+        }`} style={{ top: '10%', left: '20%' }} />
+        <div className={`absolute w-96 h-96 rounded-full blur-3xl animate-pulse delay-1000 ${
+          theme === 'dark' ? 'bg-purple-500/10' : 'bg-purple-400/30'
+        }`} style={{ bottom: '10%', right: '20%' }} />
       </div>
 
       {/* Header */}
       <motion.header 
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="relative z-10 border-b border-white/10 bg-black/20 backdrop-blur-xl"
+        className={`relative z-10 backdrop-blur-xl ${
+          theme === 'dark' 
+            ? 'border-b border-white/10 bg-black/20' 
+            : 'border-b border-blue-200/50 bg-white/60 shadow-lg shadow-blue-100/50'
+        }`}
       >
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -337,13 +351,15 @@ const SpaceFlow = () => {
               transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
               className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
             >
-              <Sparkles className="w-6 h-6" />
+              <Sparkles className="w-6 h-6 text-white" />
             </motion.div>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 SpaceFlow
               </h1>
-              <p className="text-xs text-slate-400">Space-Aware Campus Intelligence</p>
+              <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-blue-700/80'}`}>
+                Space-Aware Campus Intelligence
+              </p>
             </div>
           </div>
 
@@ -352,7 +368,10 @@ const SpaceFlow = () => {
               variant="outline"
               size="sm"
               onClick={() => setPrivacyMode(!privacyMode)}
-              className="border-white/20 hover:bg-white/10"
+              className={theme === 'dark' 
+                ? 'border-white/20 hover:bg-white/10' 
+                : 'border-blue-300 hover:bg-blue-100 bg-white/50'
+              }
             >
               {privacyMode ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
               {privacyMode ? 'Privacy Mode' : 'Full Access'}
@@ -375,21 +394,37 @@ const SpaceFlow = () => {
           transition={{ delay: 0.2 }}
           className="flex-[2] flex flex-col gap-4"
         >
-          <Card className="flex-1 bg-black/40 border-white/10 backdrop-blur-xl overflow-hidden">
-            <CardHeader className="pb-3 border-b border-white/10">
+          <Card className={`flex-1 backdrop-blur-xl overflow-hidden ${
+            theme === 'dark' 
+              ? 'bg-black/40 border-white/10' 
+              : 'bg-white/80 border-blue-200/50 shadow-xl shadow-blue-100/50'
+          }`}>
+            <CardHeader className={`pb-3 ${
+              theme === 'dark' 
+                ? 'border-b border-white/10 bg-slate-900/50' 
+                : 'border-b border-slate-200 bg-gradient-to-r from-slate-800 to-slate-900'
+            }`}>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-blue-400" />
+                <CardTitle className={`text-lg flex items-center gap-2 ${
+                  theme === 'dark' ? 'text-white' : 'text-white'
+                }`}>
+                  <MapPin className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-300'}`} />
                   IITG Campus Live Map
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   {/* Map Controls */}
-                  <div className="flex items-center gap-1 bg-black/40 rounded-lg p-1 border border-white/10">
+                  <div className={`flex items-center gap-1 rounded-lg p-1 border ${
+                    theme === 'dark' 
+                      ? 'bg-black/40 border-white/10' 
+                      : 'bg-slate-950/90 border-slate-700'
+                  }`}>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={handleZoomIn}
-                      className="h-8 w-8 p-0 hover:bg-white/10"
+                      className={`h-8 w-8 p-0 ${
+                        theme === 'dark' ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-700 text-slate-200'
+                      }`}
                       title="Zoom In"
                     >
                       <ZoomIn className="w-4 h-4" />
@@ -398,7 +433,9 @@ const SpaceFlow = () => {
                       size="sm"
                       variant="ghost"
                       onClick={handleZoomOut}
-                      className="h-8 w-8 p-0 hover:bg-white/10"
+                      className={`h-8 w-8 p-0 ${
+                        theme === 'dark' ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-700 text-slate-200'
+                      }`}
                       title="Zoom Out"
                     >
                       <ZoomOut className="w-4 h-4" />
@@ -407,20 +444,29 @@ const SpaceFlow = () => {
                       size="sm"
                       variant="ghost"
                       onClick={handleResetView}
-                      className="h-8 w-8 p-0 hover:bg-white/10"
+                      className={`h-8 w-8 p-0 ${
+                        theme === 'dark' ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-700 text-slate-200'
+                      }`}
                       title="Reset View"
                     >
                       <RotateCcw className="w-4 h-4" />
                     </Button>
                   </div>
-                  <Badge variant="outline" className="border-blue-400/50 text-blue-400 text-xs">
+                  <Badge variant="outline" className={`text-xs font-semibold ${
+                    theme === 'dark' 
+                      ? 'border-blue-400/50 text-blue-400' 
+                      : 'border-blue-400 text-blue-300 bg-slate-800/80'
+                  }`}>
                     Zoom: {(zoom * 100).toFixed(0)}%
                   </Badge>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => setSimulatorOpen(true)}
-                    className="text-purple-400 hover:bg-purple-500/20"
+                    className={theme === 'dark' 
+                      ? 'text-purple-400 hover:bg-purple-500/20' 
+                      : 'text-purple-300 hover:bg-purple-600/30 bg-slate-800/50 font-semibold'
+                    }
                   >
                     <Zap className="w-4 h-4 mr-2" />
                     What-If Simulator
@@ -441,7 +487,7 @@ const SpaceFlow = () => {
                 style={{
                   overflow: 'hidden',
                   position: 'relative',
-                  backgroundColor: '#0f172a',
+                  backgroundColor: theme === 'dark' ? '#0f172a' : '#f0f9ff',
                 }}
               >
                 <motion.div
@@ -537,7 +583,11 @@ const SpaceFlow = () => {
                           {/* Location Name Label */}
                           <div className="absolute top-12 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                             <div className={`px-2 py-1 rounded text-xs font-semibold backdrop-blur-sm border ${
-                              isSelected ? 'bg-blue-500/90 border-blue-400 text-white' : 'bg-black/80 border-white/20 text-white/90'
+                              isSelected 
+                                ? 'bg-blue-500/90 border-blue-400 text-white' 
+                                : theme === 'dark'
+                                  ? 'bg-black/80 border-white/20 text-white/90'
+                                  : 'bg-white/95 border-blue-300 text-slate-900 shadow-md shadow-blue-200/50'
                             }`}>
                               {location.name}
                               <div className="text-[10px] opacity-80">
@@ -581,24 +631,30 @@ const SpaceFlow = () => {
               </div>
 
               {/* Map Legend */}
-              <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-md rounded-lg p-3 border border-white/20">
-                <h4 className="text-xs font-semibold mb-2 text-white/90">Status Legend</h4>
+              <div className={`absolute bottom-4 left-4 backdrop-blur-md rounded-lg p-3 border shadow-lg ${
+                theme === 'dark' 
+                  ? 'bg-black/80 border-white/20' 
+                  : 'bg-white/95 border-blue-200 shadow-blue-200/50'
+              }`}>
+                <h4 className={`text-xs font-semibold mb-2 ${
+                  theme === 'dark' ? 'text-white/90' : 'text-slate-800'
+                }`}>Status Legend</h4>
                 <div className="space-y-1 text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-green-500" />
-                    <span className="text-white/80">Normal (&lt;70%)</span>
+                    <span className={theme === 'dark' ? 'text-white/80' : 'text-slate-600'}>Normal (&lt;70%)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <span className="text-white/80">Warning (70-90%)</span>
+                    <span className={theme === 'dark' ? 'text-white/80' : 'text-slate-600'}>Warning (70-90%)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-orange-500" />
-                    <span className="text-white/80">Crowded (90-100%)</span>
+                    <span className={theme === 'dark' ? 'text-white/80' : 'text-slate-600'}>Crowded (90-100%)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <span className="text-white/80">Critical (&gt;100%)</span>
+                    <span className={theme === 'dark' ? 'text-white/80' : 'text-slate-600'}>Critical (&gt;100%)</span>
                   </div>
                 </div>
               </div>
@@ -688,12 +744,20 @@ const SpaceFlow = () => {
           transition={{ delay: 0.3 }}
           className="w-96 flex flex-col gap-4"
         >
-          <Card className="flex-1 bg-black/40 border-white/10 backdrop-blur-xl overflow-hidden flex flex-col">
+          <Card className={`flex-1 backdrop-blur-xl overflow-hidden flex flex-col ${
+            theme === 'dark' 
+              ? 'bg-black/40 border-white/10' 
+              : 'bg-white/80 border-blue-200/50 shadow-xl shadow-blue-100/50'
+          }`}>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-orange-400" />
+                <AlertTriangle className={`w-5 h-5 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'}`} />
                 Priority Alerts
-                <Badge className="ml-auto bg-red-500/20 text-red-400 border-red-500/50">
+                <Badge className={`ml-auto ${
+                  theme === 'dark' 
+                    ? 'bg-red-500/20 text-red-400 border-red-500/50' 
+                    : 'bg-red-100 text-red-700 border-red-300'
+                }`}>
                   {alerts.length} Active
                 </Badge>
               </CardTitle>
@@ -707,7 +771,11 @@ const SpaceFlow = () => {
                   transition={{ delay: idx * 0.1 }}
                 >
                   <Card 
-                    className={`bg-black/60 border-white/10 cursor-pointer hover:border-white/30 transition-all ${
+                    className={`cursor-pointer transition-all ${
+                      theme === 'dark'
+                        ? 'bg-black/60 border-white/10 hover:border-white/30'
+                        : 'bg-white/90 border-blue-200/50 hover:border-blue-400/70 shadow-md hover:shadow-lg'
+                    } ${
                       selectedAlert?.alert_id === alert.alert_id ? 'ring-2 ring-blue-500' : ''
                     }`}
                     onClick={() => setSelectedAlert(alert)}
