@@ -42,7 +42,7 @@ const DashboardLayout = () => {
     { icon: Bell, label: 'Alerts', path: '/dashboard/alerts' },
     { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
   ];
-
+  
   return (
     <div className="min-h-screen w-full bg-background">
       {/* Sidebar */}

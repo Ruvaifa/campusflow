@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAlertsContext } from '@/contexts/AlertsContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -104,8 +105,8 @@ interface Forecast {
 
 const SpaceFlow = () => {
   const { theme } = useTheme();
+  const { alerts, resolveAlert } = useAlertsContext();
   const [selectedLocation, setSelectedLocation] = useState<LocationMarker | null>(null);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [privacyMode, setPrivacyMode] = useState(true);
@@ -155,6 +156,64 @@ const SpaceFlow = () => {
     { id: 'stadium', name: 'Sports Stadium', type: 'sports', x: 28, y: 68, current_occupancy: 45, capacity: 200, forecast_count: 38, confidence: 0.68, status: 'normal' },
     { id: 'gym', name: 'Gymnasium', type: 'sports', x: 36, y: 64, current_occupancy: 35, capacity: 80, forecast_count: 42, confidence: 0.71, status: 'normal' },
   ])
+
+  // Fetch ML predictions for locations
+  useEffect(() => {
+    const fetchPredictions = async () => {
+      try {
+        const currentHour = new Date().getHours();
+        const currentDay = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+        
+        // Fetch predictions for all locations
+        const updatedLocations = await Promise.all(
+          locations.map(async (location) => {
+            try {
+              const response = await fetch('http://localhost:8000/api/spaceflow/forecast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  location_id: location.id,
+                  hour_of_day: currentHour,
+                  day_of_week: currentDay,
+                  is_weekend: currentDay === 0 || currentDay === 6 ? 1 : 0,
+                  swipe_count: location.current_occupancy,
+                  wifi_count: Math.floor(location.current_occupancy * 0.8),
+                  booking_count: Math.floor(location.current_occupancy * 0.3),
+                }),
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                // Update forecast with ML prediction
+                return {
+                  ...location,
+                  forecast_count: Math.round(data.predicted_occupancy),
+                  confidence: data.confidence,
+                  status: (data.predicted_occupancy > location.capacity * 0.9 ? 'critical' :
+                          data.predicted_occupancy > location.capacity * 0.75 ? 'crowded' :
+                          data.predicted_occupancy > location.capacity * 0.6 ? 'warning' : 'normal') as 'normal' | 'crowded' | 'warning' | 'critical'
+                };
+              }
+            } catch (err) {
+              console.error(`Failed to fetch prediction for ${location.name}:`, err);
+            }
+            return location;
+          })
+        );
+        
+        setLocations(updatedLocations);
+      } catch (error) {
+        console.error('Error fetching ML predictions:', error);
+      }
+    };
+
+    // Fetch predictions on mount and every 30 seconds if autoRefresh is on
+    fetchPredictions();
+    if (autoRefresh) {
+      const interval = setInterval(fetchPredictions, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh]);
 
   // Map control functions
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
@@ -225,84 +284,6 @@ const SpaceFlow = () => {
     }
   };
 
-  // Mock alerts
-  useEffect(() => {
-    const mockAlerts: Alert[] = [
-      {
-        alert_id: 'alert_001',
-        severity_score: 0.92,
-        type: 'overcrowding',
-        affected_zone: 'cse',
-        title: 'High Overcrowding Risk Detected',
-        description: 'CSE Department predicted to exceed 95% capacity in next hour',
-        evidence: [
-          { source: 'wifi_logs', id: 'wifi_12345', weight: 0.32, description: '22 new device connections detected' },
-          { source: 'lab_bookings', id: 'booking_555', weight: 0.28, description: 'Scheduled class: Data Structures Lab at 2 PM' },
-          { source: 'swipes', id: 'swipe_9876', weight: 0.25, description: 'Recent entry spike: +15 entries in 10 min' },
-        ],
-        recommended_actions: [
-          { action_id: 'act_1', title: 'Notify Department HoD', description: 'Send alert to open CS Lab Complex as overflow', expected_effect: 'Reduce load by ~30%', impact_score: 0.85 },
-          { action_id: 'act_2', title: 'Delay Class Start', description: 'Request 15min delay for current lab session', expected_effect: 'Smooth arrival distribution', impact_score: 0.65 },
-          { action_id: 'act_3', title: 'Enable Overflow Lab', description: 'Activate CS Lab Complex as overflow space', expected_effect: 'Prevent crowding', impact_score: 0.90 },
-        ],
-        timestamp: new Date().toISOString(),
-      },
-      {
-        alert_id: 'alert_002',
-        severity_score: 0.85,
-        type: 'overcrowding',
-        affected_zone: 'library',
-        title: 'Central Library Nearing Capacity',
-        description: 'Library at 83% capacity, forecast shows 95% in 30 minutes',
-        evidence: [
-          { source: 'swipes', id: 'swipe_7777', weight: 0.40, description: 'Entry rate: 12 students/min sustained' },
-          { source: 'wifi_logs', id: 'wifi_8888', weight: 0.35, description: '285 active WiFi connections' },
-          { source: 'timeline', id: 'timeline_999', weight: 0.25, description: 'Historical pattern: peak study hours' },
-        ],
-        recommended_actions: [
-          { action_id: 'act_8', title: 'Open Reading Rooms', description: 'Activate department reading rooms', expected_effect: 'Distribute 50 students', impact_score: 0.82 },
-          { action_id: 'act_9', title: 'Display Capacity Warning', description: 'Show realtime capacity on digital boards', expected_effect: 'Inform students before entry', impact_score: 0.70 },
-        ],
-        timestamp: new Date(Date.now() - 180000).toISOString(),
-      },
-      {
-        alert_id: 'alert_003',
-        severity_score: 0.78,
-        type: 'missing_entity',
-        affected_zone: 'bh1',
-        title: 'Entity Not Seen for 15 Hours',
-        description: 'Student E100234 last detected at Library 15h ago',
-        evidence: [
-          { source: 'timeline', id: 'timeline_888', weight: 0.45, description: 'Last seen: Central Library (14:30 yesterday)' },
-          { source: 'wifi_logs', id: 'wifi_333', weight: 0.30, description: 'No device activity in 15h' },
-          { source: 'swipes', id: 'swipe_111', weight: 0.25, description: 'No hostel entry recorded overnight' },
-        ],
-        recommended_actions: [
-          { action_id: 'act_4', title: 'Check CCTV Cameras', description: 'Review cameras near Library and hostel path', expected_effect: 'Locate entity path', impact_score: 0.80 },
-          { action_id: 'act_5', title: 'Notify Hostel Warden', description: 'Alert BH1 warden for manual room check', expected_effect: 'Confirm safety', impact_score: 0.95 },
-        ],
-        timestamp: new Date(Date.now() - 300000).toISOString(),
-      },
-      {
-        alert_id: 'alert_004',
-        severity_score: 0.65,
-        type: 'access_violation',
-        affected_zone: 'eeelab',
-        title: 'Simultaneous Access Detected',
-        description: 'Card C45678 used at two locations within 1 minute',
-        evidence: [
-          { source: 'swipes', id: 'swipe_5555', weight: 0.50, description: 'Swipe at EEE Labs (10:15:23)' },
-          { source: 'swipes', id: 'swipe_6666', weight: 0.50, description: 'Swipe at Core 3 (10:15:58) - 350m apart' },
-        ],
-        recommended_actions: [
-          { action_id: 'act_6', title: 'Lock Card', description: 'Temporarily disable card access', expected_effect: 'Prevent unauthorized use', impact_score: 0.75 },
-          { action_id: 'act_7', title: 'Manual Verification', description: 'Security check at both locations', expected_effect: 'Verify identity', impact_score: 0.88 },
-        ],
-        timestamp: new Date(Date.now() - 600000).toISOString(),
-      },
-    ];
-    setAlerts(mockAlerts.sort((a, b) => b.severity_score - a.severity_score));
-  }, []);
 
   const getSeverityColor = (score: number) => {
     if (score >= 0.8) return 'bg-red-500';
@@ -850,6 +831,16 @@ const SpaceFlow = () => {
                                     </Badge>
                                   </Button>
                                 ))}
+                                
+                                {/* Resolve Alert Button */}
+                                <Button
+                                  onClick={() => resolveAlert(alert.alert_id)}
+                                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                  size="sm"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Resolve Alert
+                                </Button>
                               </div>
                             </div>
                           </CardContent>

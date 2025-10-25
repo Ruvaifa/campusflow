@@ -227,7 +227,7 @@ async def resolve_entity(
     return result
 
 @app.get("/api/entity/{entity_id}/timeline")
-async def get_entity_timeline(
+async def get_entity_activity_timeline_endpoint(
     entity_id: str,
     days: int = Query(7, ge=1, le=30)
 ):
@@ -431,6 +431,15 @@ async def get_entity_history(
     
     end = datetime.fromisoformat(end_time.replace('Z', '+00:00')) if end_time else now
     
+    # Helper function to safely parse timestamp
+    def safe_parse_timestamp(timestamp_str):
+        try:
+            if timestamp_str:
+                return datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+        except (ValueError, AttributeError, TypeError):
+            pass
+        return None
+    
     history = {
         "entity_id": entity_id,
         "time_range": {
@@ -445,11 +454,11 @@ async def get_entity_history(
     if asset_type in ["all", "swipe"]:
         swipes = db.get_recent_swipes(limit=500, entity_id=entity_id)
         for swipe in swipes:
-            swipe_time = datetime.fromisoformat(swipe['timestamp'].replace('Z', '+00:00'))
-            if start <= swipe_time <= end:
+            swipe_time = safe_parse_timestamp(swipe.get('timestamp'))
+            if swipe_time and start <= swipe_time <= end:
                 history["activities"].append({
                     "type": "swipe",
-                    "timestamp": swipe['timestamp'],
+                    "timestamp": swipe.get('timestamp'),
                     "location": swipe.get('location', 'Unknown'),
                     "details": {
                         "card_id": swipe.get('card_id'),
@@ -460,11 +469,11 @@ async def get_entity_history(
     if asset_type in ["all", "wifi"]:
         wifi_logs = db.get_recent_wifi_logs(limit=500, entity_id=entity_id)
         for log in wifi_logs:
-            log_time = datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00'))
-            if start <= log_time <= end:
+            log_time = safe_parse_timestamp(log.get('timestamp'))
+            if log_time and start <= log_time <= end:
                 history["activities"].append({
                     "type": "wifi",
-                    "timestamp": log['timestamp'],
+                    "timestamp": log.get('timestamp'),
                     "location": log.get('location', 'Unknown'),
                     "details": {
                         "device_hash": log.get('device_hash'),
@@ -475,11 +484,11 @@ async def get_entity_history(
     if asset_type in ["all", "lab"]:
         lab_bookings = db.get_lab_bookings(entity_id=entity_id)
         for booking in lab_bookings:
-            booking_time = datetime.fromisoformat(booking['booking_time'].replace('Z', '+00:00'))
-            if start <= booking_time <= end:
+            booking_time = safe_parse_timestamp(booking.get('booking_time'))
+            if booking_time and start <= booking_time <= end:
                 history["activities"].append({
                     "type": "lab_booking",
-                    "timestamp": booking['booking_time'],
+                    "timestamp": booking.get('booking_time'),
                     "location": booking.get('lab_name', 'Unknown Lab'),
                     "details": {
                         "duration": booking.get('duration_hours'),
@@ -490,11 +499,11 @@ async def get_entity_history(
     if asset_type in ["all", "library"]:
         checkouts = db.get_library_checkouts(entity_id=entity_id)
         for checkout in checkouts:
-            checkout_time = datetime.fromisoformat(checkout['checkout_time'].replace('Z', '+00:00'))
-            if start <= checkout_time <= end:
+            checkout_time = safe_parse_timestamp(checkout.get('checkout_time'))
+            if checkout_time and start <= checkout_time <= end:
                 history["activities"].append({
                     "type": "library",
-                    "timestamp": checkout['checkout_time'],
+                    "timestamp": checkout.get('checkout_time'),
                     "location": "Library",
                     "details": {
                         "book_title": checkout.get('book_title'),
@@ -533,24 +542,33 @@ async def get_inactive_entities(
     # Track entities with recent activity
     active_entities = set()
     
+    # Helper function to safely parse timestamp
+    def safe_parse_timestamp(timestamp_str):
+        try:
+            if timestamp_str:
+                return datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+        except (ValueError, AttributeError, TypeError):
+            pass
+        return None
+    
     for swipe in recent_swipes:
-        swipe_time = datetime.fromisoformat(swipe['timestamp'].replace('Z', '+00:00'))
-        if swipe_time >= cutoff_time:
+        swipe_time = safe_parse_timestamp(swipe.get('timestamp'))
+        if swipe_time and swipe_time >= cutoff_time:
             active_entities.add(swipe.get('identity'))
     
     for log in recent_wifi:
-        log_time = datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00'))
-        if log_time >= cutoff_time:
+        log_time = safe_parse_timestamp(log.get('timestamp'))
+        if log_time and log_time >= cutoff_time:
             active_entities.add(log.get('identity'))
     
     for booking in recent_labs:
-        booking_time = datetime.fromisoformat(booking['booking_time'].replace('Z', '+00:00'))
-        if booking_time >= cutoff_time:
+        booking_time = safe_parse_timestamp(booking.get('booking_time'))
+        if booking_time and booking_time >= cutoff_time:
             active_entities.add(booking.get('identity'))
     
     for checkout in recent_library:
-        checkout_time = datetime.fromisoformat(checkout['checkout_time'].replace('Z', '+00:00'))
-        if checkout_time >= cutoff_time:
+        checkout_time = safe_parse_timestamp(checkout.get('checkout_time'))
+        if checkout_time and checkout_time >= cutoff_time:
             active_entities.add(checkout.get('identity'))
     
     # Find inactive entities
@@ -633,26 +651,45 @@ async def forecast_occupancy(request: dict):
     
     Request body:
     {
-        "entity_id": "optional",
-        "location": "CSE Building",
-        "hour": 14,
+        "location_id": "cse",
+        "hour_of_day": 14,
         "day_of_week": 1,
-        "day_of_month": 25,
-        "month": 10
+        "is_weekend": 0,
+        "swipe_count": 120,
+        "wifi_count": 96,
+        "booking_count": 36
     }
     """
     try:
-        prediction = ml_predictor.predict(
-            entity_id=request.get("entity_id", 1),
-            hour=request.get("hour", datetime.now().hour),
-            day_of_week=request.get("day_of_week", datetime.now().weekday()),
-            day_of_month=request.get("day_of_month", datetime.now().day),
-            month=request.get("month", datetime.now().month),
-            location=request.get("location", "CSE Building"),
-            is_weekend=request.get("is_weekend", datetime.now().weekday() >= 5),
-            is_peak_hour=request.get("is_peak_hour", 8 <= datetime.now().hour <= 17)
-        )
-        return prediction
+        now = datetime.now()
+        
+        # Build features dictionary for ML predictor
+        features = {
+            'location': request.get('location_id', 'cse'),
+            'entity_id': request.get('location_id', 'cse'),
+            'timestamp': now,
+            'hour': request.get('hour_of_day', now.hour),
+            'day_of_week': request.get('day_of_week', now.weekday()),
+            'day_of_month': now.day,
+            'month': now.month,
+            'is_weekend': request.get('is_weekend', 1 if now.weekday() >= 5 else 0),
+            'is_peak_hour': 1 if 8 <= request.get('hour_of_day', now.hour) <= 17 else 0,
+            'current_occupancy': request.get('swipe_count', 50),
+            'visit_count': request.get('booking_count', 10),
+            'unique_locations': 5,
+            'location_hour_count': request.get('wifi_count', 40),
+            'source': 'timeline'
+        }
+        
+        prediction = ml_predictor.predict(features, return_uncertainty=True)
+        
+        return {
+            "location_id": request.get('location_id', 'cse'),
+            "predicted_occupancy": prediction.get('prediction', 50),
+            "confidence": prediction.get('confidence', 0.85),
+            "uncertainty": prediction.get('uncertainty', 0),
+            "timestamp": now.isoformat()
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -667,16 +704,24 @@ async def forecast_location(location: str, hours_ahead: int = Query(1, ge=1, le=
         future_hour = future_time % 24
         future_day = now.day + (future_time // 24)
         
-        prediction = ml_predictor.predict(
-            entity_id=1,
-            hour=future_hour,
-            day_of_week=now.weekday(),
-            day_of_month=future_day,
-            month=now.month,
-            location=location,
-            is_weekend=now.weekday() >= 5,
-            is_peak_hour=8 <= future_hour <= 17
-        )
+        features = {
+            'location': location,
+            'entity_id': location,
+            'timestamp': now,
+            'hour': future_hour,
+            'day_of_week': now.weekday(),
+            'day_of_month': future_day,
+            'month': now.month,
+            'is_weekend': 1 if now.weekday() >= 5 else 0,
+            'is_peak_hour': 1 if 8 <= future_hour <= 17 else 0,
+            'current_occupancy': 50,
+            'visit_count': 10,
+            'unique_locations': 5,
+            'location_hour_count': 40,
+            'source': 'timeline'
+        }
+        
+        prediction = ml_predictor.predict(features, return_uncertainty=True)
         
         forecasts.append({
             "hour": future_hour,
@@ -712,18 +757,31 @@ async def batch_forecast(request: dict):
         for i in range(hours_ahead):
             future_time = now.hour + i
             future_hour = future_time % 24
+            future_day = now.day + (future_time // 24)
             
-            prediction = ml_predictor.predict(
-                entity_id=1,
-                hour=future_hour,
-                day_of_week=now.weekday(),
-                day_of_month=now.day,
-                month=now.month,
-                location=location,
-                is_weekend=now.weekday() >= 5,
-                is_peak_hour=8 <= future_hour <= 17
-            )
-            forecasts.append(prediction)
+            features = {
+                'location': location,
+                'entity_id': location,
+                'timestamp': now,
+                'hour': future_hour,
+                'day_of_week': now.weekday(),
+                'day_of_month': future_day,
+                'month': now.month,
+                'is_weekend': 1 if now.weekday() >= 5 else 0,
+                'is_peak_hour': 1 if 8 <= future_hour <= 17 else 0,
+                'current_occupancy': 50,
+                'visit_count': 10,
+                'unique_locations': 5,
+                'location_hour_count': 40,
+                'source': 'timeline'
+            }
+            
+            prediction = ml_predictor.predict(features, return_uncertainty=True)
+            forecasts.append({
+                "hour": future_hour,
+                "predicted_occupancy": prediction.get('prediction', 50),
+                "confidence": prediction.get('confidence', 0.85)
+            })
         
         results[location] = forecasts
     
