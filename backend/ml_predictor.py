@@ -8,6 +8,7 @@ import pickle
 import numpy as np
 from typing import Dict, List, Tuple, Optional
 from datetime import datetime
+from scipy import sparse
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -243,13 +244,19 @@ class SpaceFlowPredictor:
         
         # XGBoost prediction
         if self.xgb_model and XGB_AVAILABLE:
-            xgb_pred = self.xgb_model.predict(X)[0]
+            xgb_result = self.xgb_model.predict(X)
+            # Convert to numpy array and extract first element
+            xgb_array = np.asarray(xgb_result).flatten()
+            xgb_pred = float(xgb_array[0])
             predictions['xgboost'] = xgb_pred
             weights.append(0.3)
         
         # LightGBM prediction
         if self.lgb_model and LGB_AVAILABLE:
-            lgb_pred = self.lgb_model.predict(X)[0]
+            lgb_result = self.lgb_model.predict(X)
+            # Convert to numpy array and extract first element
+            lgb_array = np.asarray(lgb_result).flatten()
+            lgb_pred = float(lgb_array[0])
             predictions['lightgbm'] = lgb_pred
             weights.append(0.3)
         
