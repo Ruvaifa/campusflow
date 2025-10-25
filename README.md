@@ -10,7 +10,9 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-3776ab?logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+
 **Built for IIT Guwahati Hackathon 2025**
+
 
 [🚀 Live Demo](#) • [📖 Documentation](./HACKATHON_FEATURES.md) • [🎯 Features](#-key-features) • [⚡ Quick Start](#-quick-start)
 
@@ -21,6 +23,7 @@
 ## 🌟 Overview
 
 **CampusFlow** is an advanced, AI-powered campus security and entity resolution platform that unifies fragmented identity data across multiple systems (card swipes, WiFi logs, CCTV, lab bookings) into a comprehensive, real-time intelligence dashboard.
+
 
 ### 🎯 The Problem We Solve
 
@@ -77,6 +80,7 @@ Hybrid Ensemble (99.17% Top-1 Accuracy)
 - 🔍 **Deep Provenance**: Source attribution for every data point
 - 🤖 **Anomaly Detection**: ML-powered threat identification
 - 📍 **Location Prediction**: Probabilistic location forecasting
+
 
 ### 🎨 **Enterprise-Grade UI/UX**
 
@@ -324,6 +328,8 @@ Built with ❤️ by the CampusFlow Team for IIT Guwahati Hackathon 2025
 
 [![GitHub stars](https://img.shields.io/github/stars/Shafwansafi06/campus-entity-resolver1?style=social)](https://github.com/Shafwansafi06/campus-entity-resolver1)
 
-**Made with 🔥 for IIT Guwahati Hackathon 2025**
+**Made with Love for IIT Guwahati Hackathon 2025**
 
 </div>
+
+---
