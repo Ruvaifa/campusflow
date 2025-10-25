@@ -266,27 +266,27 @@ const Entities = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)]">
       {/* Entity List Sidebar */}
-      <div className="w-80 border-r border-border bg-card/50 overflow-y-auto">
-        <div className="p-4 border-b border-border sticky top-0 bg-card/95 backdrop-blur z-10">
+      <div className="w-full lg:w-80 border-b lg:border-r lg:border-b-0 border-border bg-card/50 overflow-y-auto max-h-96 lg:max-h-none">
+        <div className="p-3 md:p-4 border-b border-border sticky top-0 bg-card/95 backdrop-blur z-10">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Search entities..." 
-              className="pl-10"
+              className="pl-10 h-9 md:h-10 text-sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           
           {/* Status Filter */}
-          <div className="mt-3 flex gap-2">
+          <div className="mt-2 md:mt-3 flex gap-2">
             <Button
               variant={statusFilter === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('all')}
-              className="flex-1"
+              className="flex-1 h-8 text-xs"
             >
               All
             </Button>
@@ -294,7 +294,7 @@ const Entities = () => {
               variant={statusFilter === 'active' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('active')}
-              className="flex-1"
+              className="flex-1 h-8 text-xs"
             >
               Active
             </Button>
@@ -341,32 +341,32 @@ const Entities = () => {
                   }`}
                   onClick={() => handleEntitySelect(entity)}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="w-12 h-12">
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex items-start gap-2 md:gap-3">
+                      <Avatar className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0">
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs md:text-sm">
                           {entity.name.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="font-semibold text-sm truncate">{entity.name}</p>
+                          <p className="font-semibold text-xs md:text-sm truncate">{entity.name}</p>
                           <Badge 
                             variant={status === 'active' ? 'default' : status === 'recent' ? 'secondary' : 'outline'} 
-                            className="text-xs"
+                            className="text-xs flex-shrink-0"
                           >
                             {status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-0.5">{entity.role}</p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {entity.last_seen ? formatTimestamp(entity.last_seen) : 'N/A'}
+                        <p className="text-xs md:text-sm text-muted-foreground mt-0.5 truncate">{entity.role}</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1 truncate">
+                            <Clock className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{entity.last_seen ? formatTimestamp(entity.last_seen) : 'N/A'}</span>
                           </span>
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            {entity.current_location}
+                          <span className="flex items-center gap-1 truncate">
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{entity.current_location}</span>
                           </span>
                         </div>
                       </div>
@@ -382,22 +382,22 @@ const Entities = () => {
       {/* Entity Details */}
       <div className="flex-1 overflow-y-auto">
         {selectedEntity ? (
-          <div className="p-6">
+          <div className="p-3 md:p-6">
             {/* Header */}
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <Avatar className="w-20 h-20">
-                      <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+            <Card className="mb-4 md:mb-6">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row items-start gap-4">
+                  <div className="flex items-start gap-3 md:gap-4 w-full sm:w-auto">
+                    <Avatar className="w-16 h-16 md:w-20 md:h-20 flex-shrink-0">
+                      <AvatarFallback className="bg-primary/10 text-primary text-lg md:text-2xl font-bold">
                         {selectedEntity.name.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <h2 className="text-2xl font-bold">{selectedEntity.name}</h2>
-                      <p className="text-muted-foreground mt-1">{selectedEntity.role}</p>
-                      <div className="flex items-center gap-4 mt-3">
-                        <Badge variant="outline" className="flex items-center gap-1">
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-xl md:text-2xl font-bold truncate">{selectedEntity.name}</h2>
+                      <p className="text-sm md:text-base text-muted-foreground mt-1 truncate">{selectedEntity.role}</p>
+                      <div className="flex flex-wrap items-center gap-2 md:gap-4 mt-3">
+                        <Badge variant="outline" className="flex items-center gap-1 text-xs">
                           <Building2 className="w-3 h-3" />
                           {selectedEntity.department}
                         </Badge>

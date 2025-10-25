@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { alertsAPI } from '@/lib/api';
 
 // Types
 interface Alert {
@@ -41,7 +42,7 @@ interface AlertsContextType {
   alertsSummary: AlertsSummary;
   addAlert: (alert: Alert) => void;
   updateAlertStatus: (alertId: string, status: 'active' | 'resolved' | 'pending') => void;
-  resolveAlert: (alertId: string) => void;
+  resolveAlert: (alertId: string) => Promise<void>;
   refreshAlerts: () => void;
 }
 
@@ -179,8 +180,18 @@ export const AlertsProvider: React.FC<AlertsProviderProps> = ({ children }) => {
     );
   };
 
-  const resolveAlert = (alertId: string) => {
-    updateAlertStatus(alertId, 'resolved');
+  const resolveAlert = async (alertId: string) => {
+    try {
+      // Update local state immediately for optimistic UI
+      updateAlertStatus(alertId, 'resolved');
+      
+      // Call backend API to persist the change
+      await alertsAPI.updateStatus(alertId, 'resolved');
+    } catch (error) {
+      console.error('Failed to resolve alert:', error);
+      // Optionally revert the local state change on error
+      // For now, we'll keep the optimistic update
+    }
   };
 
   const refreshAlerts = () => {
