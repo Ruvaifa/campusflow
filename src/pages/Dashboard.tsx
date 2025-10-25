@@ -9,7 +9,12 @@ import {
   ArrowDownRight,
   Wifi,
   CreditCard,
-  Eye
+  Eye,
+  ChevronRight,
+  Clock,
+  MapPin,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -30,13 +35,18 @@ import { useNavigate } from 'react-router-dom';
 import { useDashboardStats, useProfiles, useSwipes, useAlerts, useWeeklyActivity, useSourceDistribution } from '@/hooks/useAPI';
 import { useState } from 'react';
 import { useAlertsContext } from '@/contexts/AlertsContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // State for hover effects
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [hoveredChart, setHoveredChart] = useState<string | null>(null);
+  const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
+  const [resolvingAlerts, setResolvingAlerts] = useState<Set<string>>(new Set());
   
   // Fixed date and time for data consistency (hidden from UI)
   const TARGET_DATE = '2025-09-20';
@@ -51,6 +61,32 @@ const Dashboard = () => {
   
   // Use shared alerts context
   const { alerts, alertsSummary, resolveAlert } = useAlertsContext();
+
+  // Handle alert resolution with loading state and toast
+  const handleResolveAlert = async (alertId: string, alertTitle: string) => {
+    setResolvingAlerts(prev => new Set(prev).add(alertId));
+    
+    try {
+      await resolveAlert(alertId);
+      toast({
+        title: "Alert Resolved",
+        description: `Successfully resolved: ${alertTitle}`,
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Resolution Failed",
+        description: "Failed to resolve alert. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setResolvingAlerts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(alertId);
+        return newSet;
+      });
+    }
+  };
 
   // Calculate stats from real data
   const stats = [
@@ -153,17 +189,17 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground mt-1 text-sm md:text-base">
           Real-time campus security monitoring and entity resolution
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => (
           <Card 
             key={index} 
@@ -175,34 +211,34 @@ const Dashboard = () => {
             onMouseEnter={() => setHoveredCard(`stat-${index}`)}
             onMouseLeave={() => setHoveredCard(null)}
           >
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-sm font-medium transition-colors ${
+                <div className="min-w-0 flex-1">
+                  <p className={`text-xs md:text-sm font-medium transition-colors truncate ${
                     hoveredCard === `stat-${index}` ? 'text-sky-300' : 'text-muted-foreground'
                   }`}>
                     {stat.title}
                   </p>
-                  <p className={`text-3xl font-bold mt-2 transition-colors ${
+                  <p className={`text-xl md:text-3xl font-bold mt-1 md:mt-2 transition-colors ${
                     hoveredCard === `stat-${index}` ? 'text-sky-400' : ''
                   }`}>{stat.value}</p>
-                  <div className="flex items-center gap-1 mt-2">
+                  <div className="flex items-center gap-1 mt-1 md:mt-2">
                     {stat.trend === 'up' ? (
-                      <ArrowUpRight className="w-4 h-4 text-success" />
+                      <ArrowUpRight className="w-3 h-3 md:w-4 md:h-4 text-success" />
                     ) : (
-                      <ArrowDownRight className="w-4 h-4 text-destructive" />
+                      <ArrowDownRight className="w-3 h-3 md:w-4 md:h-4 text-destructive" />
                     )}
-                    <span className={stat.trend === 'up' ? 'text-success' : 'text-destructive'}>
+                    <span className={`text-xs md:text-sm ${stat.trend === 'up' ? 'text-success' : 'text-destructive'}`}>
                       {stat.change}
                     </span>
                   </div>
                 </div>
-                <div className={`p-3 rounded-xl transition-all duration-300 ${
+                <div className={`p-2 md:p-3 rounded-xl transition-all duration-300 flex-shrink-0 ${
                   hoveredCard === `stat-${index}` 
                     ? 'bg-slate-700 scale-110' 
                     : 'bg-muted'
                 } ${stat.color}`}>
-                  <stat.icon className="w-6 h-6" />
+                  <stat.icon className="w-4 h-4 md:w-6 md:h-6" />
                 </div>
               </div>
             </CardContent>
@@ -211,7 +247,7 @@ const Dashboard = () => {
       </div>
 
       {/* Charts Row */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         {/* Activity Chart */}
         <Card 
           className={`col-span-1 transition-all duration-300 cursor-pointer ${
@@ -311,80 +347,197 @@ const Dashboard = () => {
 
         {/* Priority Alerts */}
         <Card 
-          className={`col-span-1 transition-all duration-300 cursor-pointer ${
+          className={`col-span-1 transition-all duration-300 ${
             hoveredChart === 'alerts' 
-              ? 'scale-105 bg-slate-900/80 shadow-2xl border-slate-700' 
-              : 'hover:shadow-lg hover:bg-slate-50/50'
+              ? 'scale-[1.02] bg-gradient-to-br from-slate-900/90 to-slate-800/90 shadow-2xl border-red-500/30' 
+              : 'hover:shadow-lg hover:bg-slate-50/50 dark:hover:bg-slate-900/50'
           }`}
           onMouseEnter={() => setHoveredChart('alerts')}
           onMouseLeave={() => setHoveredChart(null)}
         >
-          <CardHeader>
-            <CardTitle className={`text-lg transition-colors ${
-              hoveredChart === 'alerts' ? 'text-sky-400' : ''
-            }`}>Priority Alerts</CardTitle>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className={`text-lg font-bold transition-colors flex items-center gap-2 ${
+                hoveredChart === 'alerts' ? 'text-red-400' : ''
+              }`}>
+                <AlertTriangle className={`w-5 h-5 ${hoveredChart === 'alerts' ? 'animate-pulse' : ''}`} />
+                Priority Alerts
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/dashboard/alerts')}
+                className={`text-xs transition-colors ${
+                  hoveredChart === 'alerts' ? 'text-sky-400 hover:text-sky-300' : ''
+                }`}
+              >
+                View All
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 max-h-[180px] overflow-y-auto">
-              {alerts.slice(0, 4).map((alert, index) => {
-                const severity = alert.severity_score >= 0.8 ? 'high' : alert.severity_score >= 0.6 ? 'medium' : 'low';
-                return (
-                  <div 
-                    key={alert.alert_id || index}
-                    className={`p-3 rounded-lg border transition-all duration-200 ${
-                      hoveredChart === 'alerts' 
-                        ? 'border-red-500/50 hover:opacity-90' 
-                        : 'border-red-400/30 hover:opacity-80'
-                    }`}
-                    style={{
-                      backgroundColor: '#0D152E'
-                    }}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className={`w-2 h-2 rounded-full ${
-                            severity === 'high' ? 'bg-red-500' :
-                            severity === 'medium' ? 'bg-orange-500' :
-                            'bg-yellow-500'
-                          } animate-pulse`} />
-                          <Badge 
-                            variant="outline" 
-                            className={`text-xs ${
-                              severity === 'high' ? 'border-red-500/50 text-red-400 bg-red-500/30' :
-                              severity === 'medium' ? 'border-orange-500/50 text-orange-400 bg-orange-500/20' :
-                              'border-yellow-500/50 text-yellow-400 bg-yellow-500/20'
-                            }`}
-                          >
-                            {severity === 'high' ? 'CRITICAL' : 
-                             severity === 'medium' ? 'HIGH' : 
-                             'MEDIUM'}
-                          </Badge>
+            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+              <AnimatePresence mode="popLayout">
+                {alerts.slice(0, 4).map((alert, index) => {
+                  const severity = alert.severity_score >= 0.8 ? 'critical' : alert.severity_score >= 0.6 ? 'high' : 'medium';
+                  const isExpanded = expandedAlert === alert.alert_id;
+                  
+                  return (
+                    <motion.div
+                      key={alert.alert_id || index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ delay: index * 0.1 }}
+                      layout
+                    >
+                      <div 
+                        className={`group relative p-3 md:p-4 rounded-lg border transition-all duration-300 cursor-pointer ${
+                          isExpanded
+                            ? 'border-red-500/70 bg-gradient-to-r from-red-950/40 to-slate-900/40 shadow-lg'
+                            : 'border-red-400/20 hover:border-red-400/40 hover:bg-slate-900/30'
+                        }`}
+                        onClick={() => setExpandedAlert(isExpanded ? null : alert.alert_id)}
+                      >
+                        {/* Alert Header */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                              <motion.div 
+                                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                  severity === 'critical' ? 'bg-red-500' :
+                                  severity === 'high' ? 'bg-orange-500' :
+                                  'bg-yellow-500'
+                                }`}
+                                animate={{ 
+                                  scale: [1, 1.3, 1],
+                                  opacity: [1, 0.6, 1]
+                                }}
+                                transition={{ 
+                                  duration: 2,
+                                  repeat: Infinity,
+                                  ease: "easeInOut"
+                                }}
+                              />
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs font-semibold ${
+                                  severity === 'critical' ? 'border-red-500/50 text-red-300 bg-red-500/20' :
+                                  severity === 'high' ? 'border-orange-500/50 text-orange-300 bg-orange-500/20' :
+                                  'border-yellow-500/50 text-yellow-300 bg-yellow-500/20'
+                                }`}
+                              >
+                                {severity === 'critical' ? 'CRITICAL' : 
+                                 severity === 'high' ? 'HIGH' : 
+                                 'MEDIUM'}
+                              </Badge>
+                              <span className="text-xs text-gray-400">
+                                {alert.severity_score ? `${(alert.severity_score * 100).toFixed(0)}%` : ''}
+                              </span>
+                            </div>
+                            <h4 className={`font-semibold text-xs md:text-sm transition-colors ${
+                              isExpanded ? 'text-red-300' : 'text-white group-hover:text-red-200'
+                            }`}>
+                              {alert.title}
+                            </h4>
+                            <div className="flex items-center gap-1 md:gap-2 mt-1 text-xs text-gray-400">
+                              <MapPin className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate">{alert.affected_zone}</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            <span className="text-xs text-gray-400 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span className="hidden sm:inline">
+                                {new Date(alert.timestamp).toLocaleTimeString('en-US', { 
+                                  hour: 'numeric', 
+                                  minute: '2-digit' 
+                                })}
+                              </span>
+                              <span className="sm:hidden">
+                                {new Date(alert.timestamp).toLocaleTimeString('en-US', { 
+                                  hour: 'numeric'
+                                })}
+                              </span>
+                            </span>
+                            <motion.div
+                              animate={{ rotate: isExpanded ? 90 : 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <ChevronRight className="w-4 h-4 text-gray-400" />
+                            </motion.div>
+                          </div>
                         </div>
-                        <h4 className="font-semibold text-sm text-white">
-                          {alert.title}
-                        </h4>
-                        <p className="text-xs mt-1 text-gray-300">
-                          {alert.affected_zone}
-                        </p>
+
+                        {/* Expanded Content */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-3 pt-3 border-t border-red-500/20 space-y-2">
+                                <p className="text-xs md:text-sm text-gray-300">
+                                  {alert.description}
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs h-7 border-green-500/30 text-green-400 hover:bg-green-500/10 disabled:opacity-50 flex-1 sm:flex-initial"
+                                    disabled={resolvingAlerts.has(alert.alert_id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleResolveAlert(alert.alert_id, alert.title);
+                                    }}
+                                  >
+                                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                                    {resolvingAlerts.has(alert.alert_id) ? 'Resolving...' : 'Resolve'}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs h-7 border-sky-500/30 text-sky-400 hover:bg-sky-500/10 flex-1 sm:flex-initial"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate('/dashboard/alerts');
+                                    }}
+                                  >
+                                    View Details
+                                    <ChevronRight className="w-3 h-3 ml-1" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Hover Glow Effect */}
+                        <div className={`absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none ${
+                          severity === 'critical' ? 'bg-red-500/5' :
+                          severity === 'high' ? 'bg-orange-500/5' :
+                          'bg-yellow-500/5'
+                        }`} />
                       </div>
-                      <div className="text-right">
-                        <span className="text-xs text-gray-400">
-                          {new Date(alert.timestamp).toLocaleTimeString('en-US', { 
-                            hour: 'numeric', 
-                            minute: '2-digit' 
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+              
               {alerts.length === 0 && (
-                <div className="text-center py-8 text-gray-400">
-                  <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No active alerts</p>
-                </div>
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-8 text-gray-400"
+                >
+                  <CheckCircle2 className="w-10 h-10 mx-auto mb-3 text-green-500/50" />
+                  <p className="text-sm font-medium">All Clear!</p>
+                  <p className="text-xs mt-1">No active priority alerts</p>
+                </motion.div>
               )}
             </div>
           </CardContent>
@@ -569,11 +722,6 @@ const Dashboard = () => {
                     Pending ({alertsSummary?.pending_alerts || 0})
                   </span>
                 </div>
-              </div>
-              
-              {/* Debug Info - Remove this in production */}
-              <div className="text-xs text-gray-500 text-center">
-                Debug: Total: {alertsSummary?.total_alerts || 0}, Resolved: {alertsSummary?.resolved_alerts || 0}, Active: {alertsSummary?.active_alerts || 0}
               </div>
               
               {/* Quick Stats */}

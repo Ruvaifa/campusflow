@@ -244,4 +244,4 @@ curl http://localhost:8000/api/spaceflow/model/info
 
 ---
 
-**Built by Team Ethos for IITG Hackathon Finals 2025** 🏆
+**Built by Team CampusFlow for IITG Hackathon Finals 2025** 🏆
