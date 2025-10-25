@@ -1,0 +1,11 @@
+# Model Placeholder
+
+This directory will contain your trained SpaceFlow ML models.
+
+After training in Colab, place these 4 files here:
+1. spaceflow_nn_model.pt
+2. spaceflow_xgboost.json
+3. spaceflow_lightgbm.txt
+4. spaceflow_artifacts.pkl
+
+Until then, the system will use fallback heuristics.

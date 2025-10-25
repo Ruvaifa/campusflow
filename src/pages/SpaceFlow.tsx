@@ -157,7 +157,63 @@ const SpaceFlow = () => {
     { id: 'gym', name: 'Gymnasium', type: 'sports', x: 36, y: 64, current_occupancy: 35, capacity: 80, forecast_count: 42, confidence: 0.71, status: 'normal' },
   ])
 
-  
+  // Fetch ML predictions for locations
+  useEffect(() => {
+    const fetchPredictions = async () => {
+      try {
+        const currentHour = new Date().getHours();
+        const currentDay = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+        
+        // Fetch predictions for all locations
+        const updatedLocations = await Promise.all(
+          locations.map(async (location) => {
+            try {
+              const response = await fetch('http://localhost:8000/api/spaceflow/forecast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  location_id: location.id,
+                  hour_of_day: currentHour,
+                  day_of_week: currentDay,
+                  is_weekend: currentDay === 0 || currentDay === 6 ? 1 : 0,
+                  swipe_count: location.current_occupancy,
+                  wifi_count: Math.floor(location.current_occupancy * 0.8),
+                  booking_count: Math.floor(location.current_occupancy * 0.3),
+                }),
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                // Update forecast with ML prediction
+                return {
+                  ...location,
+                  forecast_count: Math.round(data.predicted_occupancy),
+                  confidence: data.confidence,
+                  status: (data.predicted_occupancy > location.capacity * 0.9 ? 'critical' :
+                          data.predicted_occupancy > location.capacity * 0.75 ? 'crowded' :
+                          data.predicted_occupancy > location.capacity * 0.6 ? 'warning' : 'normal') as 'normal' | 'crowded' | 'warning' | 'critical'
+                };
+              }
+            } catch (err) {
+              console.error(`Failed to fetch prediction for ${location.name}:`, err);
+            }
+            return location;
+          })
+        );
+        
+        setLocations(updatedLocations);
+      } catch (error) {
+        console.error('Error fetching ML predictions:', error);
+      }
+    };
+
+    // Fetch predictions on mount and every 30 seconds if autoRefresh is on
+    fetchPredictions();
+    if (autoRefresh) {
+      const interval = setInterval(fetchPredictions, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh]);
 
   // Map control functions
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
