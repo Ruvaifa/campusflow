@@ -157,6 +157,8 @@ const SpaceFlow = () => {
     { id: 'gym', name: 'Gymnasium', type: 'sports', x: 36, y: 64, current_occupancy: 35, capacity: 80, forecast_count: 42, confidence: 0.71, status: 'normal' },
   ])
 
+
+  
   // Map control functions
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
