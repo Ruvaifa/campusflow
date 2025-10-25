@@ -14,8 +14,6 @@ import {
   MapPin, 
   Activity,
   Zap,
-  Eye,
-  EyeOff,
   Play,
   BarChart3,
   Brain,
@@ -108,8 +106,6 @@ const SpaceFlow = () => {
   const { alerts, resolveAlert } = useAlertsContext();
   const [selectedLocation, setSelectedLocation] = useState<LocationMarker | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
-  const [simulatorOpen, setSimulatorOpen] = useState(false);
-  const [privacyMode, setPrivacyMode] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   
   // Map controls
@@ -325,55 +321,43 @@ const SpaceFlow = () => {
             : 'border-b border-blue-200/50 bg-white/60 shadow-lg shadow-blue-100/50'
         }`}
       >
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 md:gap-4">
             <motion.div 
               animate={{ rotate: 360 }}
               transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
+              className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0"
             >
-              <Sparkles className="w-6 h-6 text-white" />
+              <Sparkles className="w-4 h-4 md:w-6 md:h-6 text-white" />
             </motion.div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent truncate">
                 SpaceFlow
               </h1>
-              <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-blue-700/80'}`}>
+              <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-blue-700/80'} hidden sm:block`}>
                 Space-Aware Campus Intelligence
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPrivacyMode(!privacyMode)}
-              className={theme === 'dark' 
-                ? 'border-white/20 hover:bg-white/10' 
-                : 'border-blue-300 hover:bg-blue-100 bg-white/50'
-              }
-            >
-              {privacyMode ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-              {privacyMode ? 'Privacy Mode' : 'Full Access'}
-            </Button>
-
-            <Badge variant="outline" className="border-green-500/50 text-green-400 px-4 py-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse" />
-              Live System
+          <div className="flex items-center gap-2 md:gap-4">
+            <Badge variant="outline" className="border-green-500/50 text-green-400 px-2 md:px-4 py-1 md:py-2 text-xs">
+              <div className="w-2 h-2 bg-green-400 rounded-full mr-1 md:mr-2 animate-pulse" />
+              <span className="hidden sm:inline">Live System</span>
+              <span className="sm:hidden">Live</span>
             </Badge>
           </div>
         </div>
       </motion.header>
 
       {/* Main Content */}
-      <div className="flex-1 flex gap-4 p-6 relative z-10 overflow-hidden">
-        {/* Left: Campus Map - Full Width */}
+      <div className="flex-1 flex flex-col lg:flex-row gap-3 md:gap-4 p-3 md:p-6 relative z-10 overflow-hidden">
+        {/* Left: Campus Map - Full Width on Mobile */}
         <motion.div 
           initial={{ x: -100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="flex-[2] flex flex-col gap-4"
+          className="flex-[2] flex flex-col gap-3 md:gap-4 min-h-0"
         >
           <Card className={`flex-1 backdrop-blur-xl overflow-hidden ${
             theme === 'dark' 
@@ -440,31 +424,28 @@ const SpaceFlow = () => {
                   }`}>
                     Zoom: {(zoom * 100).toFixed(0)}%
                   </Badge>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setSimulatorOpen(true)}
-                    className={theme === 'dark' 
-                      ? 'text-purple-400 hover:bg-purple-500/20' 
-                      : 'text-purple-300 hover:bg-purple-600/30 bg-slate-800/50 font-semibold'
-                    }
-                  >
-                    <Zap className="w-4 h-4 mr-2" />
-                    What-If Simulator
-                  </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-0 flex-1 relative overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
+            <CardContent className="p-0 flex-1 relative overflow-hidden" style={{ height: 'calc(100vh - 280px)', minHeight: '300px' }}>
               {/* Interactive Map Container */}
               <div 
                 ref={mapContainerRef}
-                className="w-full h-full relative cursor-grab active:cursor-grabbing"
+                className="w-full h-full relative cursor-grab active:cursor-grabbing touch-none"
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
                 onWheel={handleWheel}
+                onTouchStart={(e) => {
+                  const touch = e.touches[0];
+                  handleMouseDown({ clientX: touch.clientX, clientY: touch.clientY } as any);
+                }}
+                onTouchMove={(e) => {
+                  const touch = e.touches[0];
+                  handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY } as any);
+                }}
+                onTouchEnd={handleMouseUp}
                 style={{
                   overflow: 'hidden',
                   position: 'relative',
@@ -612,30 +593,30 @@ const SpaceFlow = () => {
               </div>
 
               {/* Map Legend */}
-              <div className={`absolute bottom-4 left-4 backdrop-blur-md rounded-lg p-3 border shadow-lg ${
+              <div className={`absolute bottom-4 left-4 backdrop-blur-md rounded-lg p-2 md:p-3 border shadow-lg text-xs md:text-sm ${
                 theme === 'dark' 
                   ? 'bg-black/80 border-white/20' 
                   : 'bg-white/95 border-blue-200 shadow-blue-200/50'
               }`}>
                 <h4 className={`text-xs font-semibold mb-2 ${
                   theme === 'dark' ? 'text-white/90' : 'text-slate-800'
-                }`}>Status Legend</h4>
+                }`}>Status</h4>
                 <div className="space-y-1 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                    <span className={theme === 'dark' ? 'text-white/80' : 'text-slate-600'}>Normal (&lt;70%)</span>
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-500 flex-shrink-0" />
+                    <span className={`${theme === 'dark' ? 'text-white/80' : 'text-slate-600'} truncate`}>Normal</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <span className={theme === 'dark' ? 'text-white/80' : 'text-slate-600'}>Warning (70-90%)</span>
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-yellow-500 flex-shrink-0" />
+                    <span className={`${theme === 'dark' ? 'text-white/80' : 'text-slate-600'} truncate`}>Warning</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-orange-500" />
-                    <span className={theme === 'dark' ? 'text-white/80' : 'text-slate-600'}>Crowded (90-100%)</span>
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-orange-500 flex-shrink-0" />
+                    <span className={`${theme === 'dark' ? 'text-white/80' : 'text-slate-600'} truncate`}>Crowded</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <span className={theme === 'dark' ? 'text-white/80' : 'text-slate-600'}>Critical (&gt;100%)</span>
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-500 flex-shrink-0" />
+                    <span className={`${theme === 'dark' ? 'text-white/80' : 'text-slate-600'} truncate`}>Critical</span>
                   </div>
                 </div>
               </div>
@@ -652,27 +633,27 @@ const SpaceFlow = () => {
                 exit={{ y: 100, opacity: 0 }}
               >
                 <Card className="bg-black/40 border-white/10 backdrop-blur-xl">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        <Target className="w-5 h-5 text-purple-400" />
-                        {selectedLocation.name} - Next Hour Forecast
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm md:text-lg flex flex-col md:flex-row md:items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <Target className="w-4 h-4 md:w-5 md:h-5 text-purple-400 flex-shrink-0" />
+                        <span className="truncate">{selectedLocation.name}</span>
                       </span>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={`${getStatusBadge(selectedLocation.status)} border-0`}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className={`${getStatusBadge(selectedLocation.status)} border-0 text-xs`}>
                           {selectedLocation.status.toUpperCase()}
                         </Badge>
-                        <Badge variant="outline" className="border-blue-400/50 text-blue-400">
-                          {(selectedLocation.confidence * 100).toFixed(0)}% confidence
+                        <Badge variant="outline" className="border-blue-400/50 text-blue-400 text-xs">
+                          {(selectedLocation.confidence * 100).toFixed(0)}%
                         </Badge>
                       </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                       <div className="space-y-2">
                         <p className="text-xs text-slate-400">Current Occupancy</p>
-                        <p className="text-2xl font-bold">{selectedLocation.current_occupancy}</p>
+                        <p className="text-xl md:text-2xl font-bold">{selectedLocation.current_occupancy}</p>
                         <Progress value={(selectedLocation.current_occupancy / selectedLocation.capacity) * 100} className="h-2" />
                         <p className="text-xs text-slate-400">{((selectedLocation.current_occupancy / selectedLocation.capacity) * 100).toFixed(0)}% of capacity</p>
                       </div>
@@ -718,23 +699,23 @@ const SpaceFlow = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* Right: Alerts Panel */}
+        {/* Right: Alerts Panel - Responsive */}
         <motion.div 
           initial={{ x: 100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="w-96 flex flex-col gap-4"
+          className="w-full lg:w-96 flex flex-col gap-3 md:gap-4"
         >
           <Card className={`flex-1 backdrop-blur-xl overflow-hidden flex flex-col ${
             theme === 'dark' 
               ? 'bg-black/40 border-white/10' 
               : 'bg-white/80 border-blue-200/50 shadow-xl shadow-blue-100/50'
           }`}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <AlertTriangle className={`w-5 h-5 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'}`} />
-                Priority Alerts
-                <Badge className={`ml-auto ${
+            <CardHeader className="pb-3 px-4 md:px-6">
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <AlertTriangle className={`w-4 h-4 md:w-5 md:h-5 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'}`} />
+                <span className="truncate">Priority Alerts</span>
+                <Badge className={`ml-auto text-xs ${
                   theme === 'dark' 
                     ? 'bg-red-500/20 text-red-400 border-red-500/50' 
                     : 'bg-red-100 text-red-700 border-red-300'
@@ -854,113 +835,6 @@ const SpaceFlow = () => {
           </Card>
         </motion.div>
       </div>
-
-      {/* What-If Simulator Dialog */}
-      <Dialog open={simulatorOpen} onOpenChange={setSimulatorOpen}>
-        <DialogContent className="bg-slate-900 border-white/20 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Zap className="w-6 h-6 text-purple-400" />
-              What-If Simulator
-            </DialogTitle>
-            <DialogDescription className="text-slate-400">
-              Simulate events and see real-time forecast updates
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Event Type</Label>
-                <Select>
-                  <SelectTrigger className="bg-black/40 border-white/20">
-                    <SelectValue placeholder="Select event type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-white/20">
-                    <SelectItem value="booking">Add Lab Booking</SelectItem>
-                    <SelectItem value="swipe">Add Card Swipe</SelectItem>
-                    <SelectItem value="wifi">Add WiFi Connection</SelectItem>
-                    <SelectItem value="class">Add Scheduled Class</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Target Location</Label>
-                <Select>
-                  <SelectTrigger className="bg-black/40 border-white/20">
-                    <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-white/20 max-h-60">
-                    {locations.map((location) => (
-                      <SelectItem key={location.id} value={location.id}>
-                        {getLocationIcon(location.type)} {location.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Number of Entities</Label>
-              <Input 
-                type="number" 
-                placeholder="25" 
-                className="bg-black/40 border-white/20"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Time Offset (minutes)</Label>
-              <Input 
-                type="number" 
-                placeholder="30" 
-                className="bg-black/40 border-white/20"
-              />
-            </div>
-
-            <div className="pt-4 border-t border-white/10">
-              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-blue-400" />
-                Predicted Impact
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-black/40 rounded-lg">
-                  <span className="text-sm">Before</span>
-                  <span className="text-lg font-bold">42 / 60</span>
-                  <Progress value={70} className="w-24 h-2" />
-                </div>
-                <div className="flex items-center justify-between p-3 bg-blue-500/20 rounded-lg border border-blue-500/50">
-                  <span className="text-sm text-blue-400">After</span>
-                  <span className="text-lg font-bold text-blue-400">58 / 60</span>
-                  <Progress value={97} className="w-24 h-2" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button 
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
-                onClick={() => {
-                  // Simulate the event
-                  setSimulatorOpen(false);
-                }}
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Run Simulation
-              </Button>
-              <Button 
-                variant="outline" 
-                className="border-white/20 hover:bg-white/10"
-                onClick={() => setSimulatorOpen(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

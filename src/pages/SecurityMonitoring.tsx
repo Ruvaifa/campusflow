@@ -351,58 +351,60 @@ const SecurityMonitoring = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Security & Monitoring</h1>
-          <p className="text-muted-foreground mt-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight truncate">Security & Monitoring</h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
             Query entity history and monitor inactive assets
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button 
             onClick={() => setUseMockData(!useMockData)} 
             variant={useMockData ? "default" : "outline"} 
             size="sm"
+            className="text-xs h-8"
           >
-            {useMockData ? "Mock Data" : "Real Data"}
+            {useMockData ? "Mock" : "Real"}
           </Button>
           {useMockData && (
             <Button 
               onClick={() => fetchEntityHistory('ENT001')} 
               variant="secondary" 
               size="sm"
+              className="text-xs h-8 hidden sm:inline-flex"
             >
-              Demo Query
+              Demo
             </Button>
           )}
-          <Button onClick={handleRefresh} variant="outline" size="sm">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
+          <Button onClick={handleRefresh} variant="outline" size="sm" className="h-8">
+            <RefreshCw className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+            <span className="hidden md:inline">Refresh</span>
           </Button>
         </div>
       </div>
 
       {/* Enhanced Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => (
           <Card key={index} className="hover:shadow-lg transition-all duration-200 hover:scale-105">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground">
+            <CardContent className="p-3 md:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground truncate">
                     {stat.title}
                   </p>
-                  <p className="text-3xl font-bold mt-2 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+                  <p className="text-xl md:text-3xl font-bold mt-1 md:mt-2 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent truncate">
                     {stat.value}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-1 truncate">
                     {stat.change}
                   </p>
                 </div>
-                <div className={`p-4 rounded-xl ${stat.bgColor} shadow-sm`}>
-                  <stat.icon className={`w-7 h-7 ${stat.color}`} />
+                <div className={`p-2 md:p-4 rounded-xl ${stat.bgColor} shadow-sm flex-shrink-0`}>
+                  <stat.icon className={`w-4 h-4 md:w-7 md:h-7 ${stat.color}`} />
                 </div>
               </div>
             </CardContent>
@@ -411,11 +413,11 @@ const SecurityMonitoring = () => {
       </div>
 
       {/* Enhanced Analytics Charts */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
         {/* Activity Trends */}
-        <Card className="col-span-2 hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+        <Card className="lg:col-span-2 hover:shadow-lg transition-shadow">
+          <CardHeader className="px-4 md:px-6">
+            <CardTitle className="text-base md:text-lg flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
               Activity Trends (7 Days)
             </CardTitle>
@@ -473,7 +475,13 @@ const SecurityMonitoring = () => {
               <BarChart data={mockActivityCategories} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
-                <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" width={100} />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  stroke="hsl(var(--muted-foreground))" 
+                  width={150}
+                  tick={{ fontSize: 12 }}
+                />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--popover))', 

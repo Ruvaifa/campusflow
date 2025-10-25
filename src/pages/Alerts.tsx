@@ -247,57 +247,57 @@ const Alerts = () => {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 md:space-y-6 p-3 md:p-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Security Alerts</h1>
-        <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Security Alerts</h1>
+        <p className={`text-sm md:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
           Monitor and manage security alerts across the campus
         </p>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Alerts</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6 pt-3 md:pt-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Total Alerts</CardTitle>
+            <Shield className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+          <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+            <div className="text-xl md:text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">All time alerts</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6 pt-3 md:pt-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Active Alerts</CardTitle>
+            <AlertTriangle className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.active}</div>
+          <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+            <div className="text-xl md:text-2xl font-bold text-red-600">{stats.active}</div>
             <p className="text-xs text-muted-foreground">Requires attention</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Investigating</CardTitle>
-            <Activity className="h-4 w-4 text-amber-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6 pt-3 md:pt-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Investigating</CardTitle>
+            <Activity className="h-3 w-3 md:h-4 md:w-4 text-amber-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{stats.investigating}</div>
+          <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+            <div className="text-xl md:text-2xl font-bold text-amber-600">{stats.investigating}</div>
             <p className="text-xs text-muted-foreground">Under review</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolved</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6 pt-3 md:pt-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Resolved</CardTitle>
+            <CheckCircle className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.resolved}</div>
+          <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+            <div className="text-xl md:text-2xl font-bold text-green-600">{stats.resolved}</div>
             <p className="text-xs text-muted-foreground">Successfully resolved</p>
           </CardContent>
         </Card>

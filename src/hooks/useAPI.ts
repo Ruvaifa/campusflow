@@ -247,9 +247,7 @@ export function useResolveAlert() {
   
   return useMutation({
     mutationFn: async (alertId: string) => {
-      // This would call an API endpoint to resolve an alert
-      // For now, it's a placeholder
-      console.log('Resolving alert:', alertId);
+      return alertsAPI.updateStatus(alertId, 'resolved');
     },
     onSuccess: () => {
       // Invalidate alerts query to refetch

@@ -180,7 +180,7 @@ export function Hero() {
               Ready to Secure Your Campus?
             </h2>
             <p className="text-muted-foreground text-lg mb-8">
-              Join institutions using Ethos for advanced security monitoring
+              Join institutions using CampusFlow for advanced security monitoring
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="rounded-xl px-8">
@@ -280,7 +280,7 @@ const HeroHeader = () => {
                 <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
                   <Shield className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <span className="font-bold text-xl">Ethos</span>
+                <span className="font-bold text-xl">CampusFlow</span>
               </Link>
 
               <button
