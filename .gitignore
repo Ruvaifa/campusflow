@@ -13,3 +13,5 @@ HACKATHON_FEATURES.md
 INTEGRATION_COMPLETE.md
 README.old.md
 backend/migrations/
+backend/creds.env
+.env
