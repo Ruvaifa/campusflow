@@ -8,6 +8,7 @@
 [![React](https://img.shields.io/badge/React-18.3-61dafb?logo=react)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776ab?logo=python)](https://www.python.org/)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Shafwansafi06/campus-entity-resolver)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 
