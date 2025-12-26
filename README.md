@@ -12,7 +12,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 
-**Built for IIT Guwahati Hackathon 2025**
+**Built for IIT Guwahati Hackathon 2025, 2nd Runner Up!**
 
 
 [🚀 Live Demo](https://drive.google.com/file/d/1Mv4sU5Im_0i1zkuHUbmtQdZV_b6ZulEk/view?usp=sharing) • [📖 Documentation](./HACKATHON_FEATURES.md) • [🎯 Features](#-key-features) • [⚡ Quick Start](#-quick-start)
